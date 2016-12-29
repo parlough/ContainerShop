@@ -23,31 +23,46 @@
  * THE SOFTWARE.
  */
 
-package com.meronat.containershop.commands;
+package com.meronat.containershop;
 
-import org.spongepowered.api.command.CommandException;
-import org.spongepowered.api.command.CommandResult;
-import org.spongepowered.api.command.CommandSource;
-import org.spongepowered.api.command.args.CommandContext;
-import org.spongepowered.api.command.spec.CommandExecutor;
-import org.spongepowered.api.text.Text;
-import org.spongepowered.api.text.action.TextActions;
-import org.spongepowered.api.text.format.TextColors;
+import com.flowpowered.math.vector.Vector3i;
+import com.meronat.containershop.entities.ShopSign;
+import org.spongepowered.api.block.BlockSnapshot;
+import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.util.Direction;
 
-public class BaseCommand implements CommandExecutor {
+import java.util.Optional;
+import java.util.Set;
 
-    @Override
-    public CommandResult execute(CommandSource source, CommandContext args) throws CommandException {
+public final class Util {
 
-        source.sendMessage(Text.of(TextColors.DARK_GREEN, "ContainerShop v0.0.1"));
-        source.sendMessage(Text.of(TextColors.DARK_GREEN, "Created by ", TextColors.GOLD, "IchorPowered: ", TextColors.BLUE, "Meronat, Nighteyes604"));
-        source.sendMessage(Text.builder("Click here for help")
-                .color(TextColors.DARK_GREEN)
-                .onClick(TextActions.runCommand("shop help"))
-                .onHover(TextActions.showText(Text.of(TextColors.DARK_GREEN, "/shop help")))
-                .build());
+    public static Optional<ShopSign> getAttachedSign(BlockSnapshot block) {
 
-        return CommandResult.success();
+        Optional<Set<Direction>> optionalDirections = block.get(Keys.CONNECTED_DIRECTIONS);
+
+        ShopSign sign = null;
+
+        if (optionalDirections.isPresent()) {
+
+            Set<Direction> directions = optionalDirections.get();
+
+            for (Direction d : directions) {
+
+                Vector3i possible = block.getPosition().add(d.asBlockOffset());
+
+                Optional<ShopSign> optionalSign = ContainerShop.getSignCollection().getSign(possible);
+
+                if (optionalSign.isPresent()) {
+
+                    sign = optionalSign.get();
+
+                }
+
+            }
+
+        }
+
+        return Optional.ofNullable(sign);
 
     }
 

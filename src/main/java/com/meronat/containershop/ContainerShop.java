@@ -34,12 +34,16 @@ import com.meronat.containershop.configuration.ConfigManager;
 import com.meronat.containershop.database.Storage;
 import com.meronat.containershop.entities.ShopSign;
 import com.meronat.containershop.entities.ShopSignCollection;
+import com.meronat.containershop.listeners.BlockBreakListener;
+import com.meronat.containershop.listeners.BlockPlaceListener;
+import com.meronat.containershop.listeners.SignChangeListener;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.config.DefaultConfig;
+import org.spongepowered.api.event.EventManager;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GamePostInitializationEvent;
@@ -141,6 +145,8 @@ public class ContainerShop {
 
         }
 
+        // TODO Register commands
+
         Optional<EconomyService> optionalEconomyService = Sponge.getServiceManager().provide(EconomyService.class);
 
         if (optionalEconomyService.isPresent()) {
@@ -154,6 +160,8 @@ public class ContainerShop {
             error = true;
 
         }
+
+        registerListeners();
 
     }
 
@@ -192,6 +200,18 @@ public class ContainerShop {
                     }
 
                 }).submit(this);
+
+    }
+
+    private void registerListeners() {
+
+        EventManager eventManager = Sponge.getEventManager();
+
+        eventManager.registerListeners(this, new BlockBreakListener());
+        eventManager.registerListeners(this, new BlockPlaceListener());
+        eventManager.registerListeners(this, new SignChangeListener());
+
+        // TODO Register interact listener(s)
 
     }
 
@@ -240,6 +260,12 @@ public class ContainerShop {
     public static boolean isBypassing(UUID uuid) {
 
         return bypassing.contains(uuid);
+
+    }
+
+    public static Config getConfig() {
+
+        return config.getConfig();
 
     }
 

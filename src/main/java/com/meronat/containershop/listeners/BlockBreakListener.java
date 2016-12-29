@@ -25,15 +25,74 @@
 
 package com.meronat.containershop.listeners;
 
+import com.meronat.containershop.ContainerShop;
+import com.meronat.containershop.Util;
+import com.meronat.containershop.entities.ShopSign;
+import org.spongepowered.api.block.BlockSnapshot;
+import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.data.Transaction;
+import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.chat.ChatTypes;
+import org.spongepowered.api.text.format.TextColors;
+
+import java.util.Optional;
 
 public class BlockBreakListener {
 
     @Listener
     public void onBlockBreak(ChangeBlockEvent.Break event) {
 
+        for (Transaction<BlockSnapshot> t: event.getTransactions()) {
 
+            BlockSnapshot block = t.getOriginal();
+
+            Optional<ShopSign> optionalSign = Optional.empty();
+
+            ShopSign sign;
+
+            if (block.getExtendedState().getType().equals(BlockTypes.WALL_SIGN)) {
+
+                optionalSign = ContainerShop.getSignCollection().getSign(block.getPosition());
+
+
+            } else if (ContainerShop.getConfig().getContainers().contains(block.getExtendedState().getId())) {
+
+                optionalSign = Util.getAttachedSign(block);
+
+            }
+
+            if (optionalSign.isPresent()) {
+
+                sign = optionalSign.get();
+
+            } else {
+
+                return;
+
+            }
+
+            if (event.getCause().root() instanceof Player) {
+
+                Player player = (Player) event.getCause().root();
+
+                if (((Player) event.getCause().root()).getUniqueId().equals(sign.getOwner())) {
+
+                    return;
+
+                } else {
+
+                    player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.DARK_RED, "You cannot destroy someone else's shop."));
+
+                }
+
+            }
+
+            event.setCancelled(true);
+
+        }
 
     }
 
