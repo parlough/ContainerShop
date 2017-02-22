@@ -25,27 +25,33 @@
 
 package com.meronat.containershop.entities;
 
+import com.flowpowered.math.vector.Vector3i;
+import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
 public class ShopSign {
 
+    private static final UUID ADMIN = UUID.fromString("025ad4eb-6db7-4a14-b044-189b4c52a4e7");
+
     private boolean adminShop;
 
-    private ItemStackSnapshot item;
+    private ItemStack item;
     private UUID owner;
     private Set<UUID> accessors;
 
     private BigDecimal buyPrice;
     private BigDecimal sellPrice;
+    private Vector3i position;
     private int amount;
 
     private long lastAccessed;
 
-    public ShopSign(UUID owner, boolean admin, double buy, double sell, int amount, ItemStackSnapshot item) {
+    public ShopSign(UUID owner, boolean admin, double buy, double sell, int amount, ItemStack item) {
 
         this.owner = owner;
         this.adminShop = admin;
@@ -80,15 +86,15 @@ public class ShopSign {
 
     }
 
-    public BigDecimal getBuyPrice() {
+    public Optional<BigDecimal> getBuyPrice() {
 
-        return this.buyPrice;
+        return Optional.ofNullable(this.buyPrice);
 
     }
 
-    public BigDecimal getSellPrice() {
+    public Optional<BigDecimal> getSellPrice() {
 
-        return this.sellPrice;
+        return Optional.ofNullable(this.sellPrice);
 
     }
 
@@ -100,13 +106,25 @@ public class ShopSign {
 
     public boolean isAccessor(UUID uuid) {
 
-        return uuid.equals(owner) || accessors.contains(uuid);
+        return uuid.equals(this.owner) || this.accessors.contains(uuid);
 
     }
 
-    public ItemStackSnapshot getItem() {
+    public ItemStack getItem() {
 
         return this.item;
+
+    }
+
+    public void setPosition(Vector3i position) {
+
+        this.position = position;
+
+    }
+
+    public Vector3i getPosition() {
+
+        return this.position;
 
     }
 

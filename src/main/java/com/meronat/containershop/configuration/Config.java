@@ -62,6 +62,9 @@ public class Config {
     @Setting(value = "protect", comment = "Should we protect the signs and containers?")
     private boolean protect = true;
 
+    @Setting(value = "limit-shops", comment = "Should we limit the amount of shops a player can create?")
+    private boolean limitShops = false;
+
     @Setting(value = "protect-from-explosions", comment = "Should we protect them from explosions?")
     private boolean protectExplosions = true;
 
@@ -73,73 +76,79 @@ public class Config {
 
     public boolean allowCreative() {
 
-        return creative;
+        return this.creative;
 
     }
 
     public boolean shiftTrading() {
 
-        return shifting;
+        return this.shifting;
 
     }
 
     public boolean canEdit() {
 
-        return editing;
+        return this.editing;
 
     }
 
     public boolean removeShopWhenEmpty() {
 
-        return removeShopWhenEmpty;
+        return this.removeShopWhenEmpty;
 
     }
 
     public boolean removeContainerWhenEmpty() {
 
-        return removeContainerWhenEmpty;
+        return this.removeContainerWhenEmpty;
 
     }
 
     public boolean withCommands() {
 
-        return withCommands;
+        return this.withCommands;
 
     }
 
     public boolean messageOutOfStock() {
 
-        return outOfStock;
+        return this.outOfStock;
 
     }
 
     public boolean notifyTransactions() {
 
-        return transactionNotify;
+        return this.transactionNotify;
 
     }
 
     public boolean protect() {
 
-        return protect;
+        return this.protect;
+
+    }
+
+    public boolean limitShops() {
+
+        return this.limitShops;
 
     }
 
     public boolean protectExplosions() {
 
-        return protectExplosions;
+        return this.protectExplosions;
 
     }
 
     public boolean protectHoppers() {
 
-        return protectHoppers;
+        return this.protectHoppers;
 
     }
 
     public List<String> getContainers() {
 
-        return containers;
+        return this.containers;
 
     }
 

@@ -32,6 +32,8 @@ import com.meronat.containershop.entities.ShopSign;
 import ninja.leaping.configurate.gson.GsonConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.item.ItemTypes;
+import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.service.sql.SqlService;
 
@@ -152,10 +154,10 @@ public final class Storage {
                 // Should only have sign per location.
                 if (tempSign.next()) {
 
-                    ItemStackSnapshot item = ItemStackSnapshot.NONE;
+                    ItemStack item = ItemStack.of(ItemTypes.NONE, 0);
 
                     try {
-                        item = GsonConfigurationLoader.builder().setSource(() -> new BufferedReader(new StringReader(tempSign.getString("ITEM")))).build().load().getValue(TypeToken.of(ItemStackSnapshot.class));
+                        item = GsonConfigurationLoader.builder().setSource(() -> new BufferedReader(new StringReader(tempSign.getString("ITEM")))).build().load().getValue(TypeToken.of(ItemStack.class));
                     } catch (ObjectMappingException e) {
                         ContainerShop.getLogger().error("Failed to deserialize item stack.");
                         e.printStackTrace();
@@ -207,7 +209,7 @@ public final class Storage {
 
             try {
 
-                item = GsonConfigurationLoader.builder().setSink(() -> new BufferedWriter(new StringWriter())).build().createEmptyNode().setValue(TypeToken.of(ItemStackSnapshot.class), sign.getItem()).toString();
+                item = GsonConfigurationLoader.builder().setSink(() -> new BufferedWriter(new StringWriter())).build().createEmptyNode().setValue(TypeToken.of(ItemStack.class), sign.getItem()).toString();
 
             } catch (ObjectMappingException e) {
 
@@ -221,8 +223,8 @@ public final class Storage {
             ps.setInt(3, location.getY());
             ps.setInt(4, location.getZ());
             ps.setBoolean(5, sign.isAdminShop());
-            ps.setBigDecimal(6, sign.getBuyPrice());
-            ps.setBigDecimal(7, sign.getSellPrice());
+            ps.setBigDecimal(6, sign.getBuyPrice().orElseGet(null));
+            ps.setBigDecimal(7, sign.getSellPrice().orElseGet(null));
             ps.setInt(8, sign.getAmount());
             ps.setString(9, item);
 
@@ -270,8 +272,8 @@ public final class Storage {
 
         ) {
 
-            ps.setBigDecimal(1, sign.getBuyPrice());
-            ps.setBigDecimal(2, sign.getSellPrice());
+            ps.setBigDecimal(1, sign.getBuyPrice().orElseGet(null));
+            ps.setBigDecimal(2, sign.getSellPrice().orElseGet(null));
             ps.setInt(3, sign.getAmount());
             ps.setInt(4, location.getX());
             ps.setInt(5, location.getY());

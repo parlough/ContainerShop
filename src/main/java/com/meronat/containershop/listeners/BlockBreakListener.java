@@ -78,7 +78,9 @@ public class BlockBreakListener {
 
                 Player player = (Player) event.getCause().root();
 
-                if (((Player) event.getCause().root()).getUniqueId().equals(sign.getOwner())) {
+                if (player.getUniqueId().equals(sign.getOwner()) || ContainerShop.isBypassing(player.getUniqueId())) {
+
+                    ContainerShop.getSignCollection().remove(sign.getPosition());
 
                     return;
 

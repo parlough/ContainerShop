@@ -25,15 +25,77 @@
 
 package com.meronat.containershop.listeners;
 
+import com.meronat.containershop.ContainerShop;
+import com.meronat.containershop.entities.ShopSign;
+import org.spongepowered.api.block.BlockSnapshot;
+import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.data.Transaction;
+import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
+import org.spongepowered.api.event.filter.cause.Root;
+import org.spongepowered.api.util.Direction;
+import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
+
+import java.util.Optional;
+import java.util.Set;
 
 public class BlockPlaceListener {
 
     @Listener
-    public void onBlockPlace(ChangeBlockEvent.Place event) {
+    public void onBlockPlace(ChangeBlockEvent.Place event, @Root Player player) {
 
+        for (Transaction<BlockSnapshot> t : event.getTransactions()) {
 
+            BlockSnapshot bs = t.getFinal();
+
+            if (!bs.getState().getType().equals(BlockTypes.WALL_SIGN)) {
+
+                return;
+
+            }
+
+            ShopSign shopSign = ContainerShop.getPlacing().get(player.getUniqueId());
+
+            if (shopSign == null) {
+
+                return;
+
+            }
+
+            Optional<Set<Direction>> optionalDirections = bs.get(Keys.CONNECTED_DIRECTIONS);
+
+            if (!optionalDirections.isPresent()) {
+
+                return;
+
+            }
+
+            Optional<Location<World>> optionalLocation = bs.getLocation();
+
+            if (!optionalLocation.isPresent()) {
+
+                return;
+
+            }
+
+            if (!ContainerShop.getConfig().getContainers().contains(optionalLocation.get().getRelative(optionalDirections.get().iterator().next()).getBlockType().getId())) {
+
+                return;
+
+            }
+
+            shopSign.setPosition(bs.getPosition());
+
+            ContainerShop.getSignCollection().put(bs.getPosition(), shopSign);
+
+            // TODO Modify the sign lines
+
+            ContainerShop.getPlacing().remove(player.getUniqueId());
+
+        }
 
     }
 

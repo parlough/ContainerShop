@@ -36,7 +36,7 @@ import com.meronat.containershop.entities.ShopSign;
 import com.meronat.containershop.entities.ShopSignCollection;
 import com.meronat.containershop.listeners.BlockBreakListener;
 import com.meronat.containershop.listeners.BlockPlaceListener;
-import com.meronat.containershop.listeners.SignChangeListener;
+import com.meronat.containershop.listeners.InteractListener;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
@@ -50,18 +50,15 @@ import org.spongepowered.api.event.game.state.GamePostInitializationEvent;
 import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.plugin.Plugin;
-import org.spongepowered.api.service.economy.EconomyService;
+import org.spongepowered.api.service.economy.*;
+import org.spongepowered.api.service.economy.Currency;
 import org.spongepowered.api.service.permission.PermissionService;
 import org.spongepowered.api.util.Tristate;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Plugin(
@@ -86,6 +83,8 @@ public class ContainerShop {
     private static ConfigManager<Config> config;
 
     private static ShopSignCollection signCollection = new ShopSignCollection();
+
+    private static Map<UUID, ShopSign> placing = new HashMap<>();
 
     private static Set<UUID> bypassing = new HashSet<>();
 
@@ -159,6 +158,8 @@ public class ContainerShop {
 
             error = true;
 
+            return;
+
         }
 
         registerListeners();
@@ -209,7 +210,7 @@ public class ContainerShop {
 
         eventManager.registerListeners(this, new BlockBreakListener());
         eventManager.registerListeners(this, new BlockPlaceListener());
-        eventManager.registerListeners(this, new SignChangeListener());
+        eventManager.registerListeners(this, new InteractListener());
 
         // TODO Register interact listener(s)
 
@@ -242,6 +243,12 @@ public class ContainerShop {
     public static ShopSignCollection getSignCollection() {
 
         return signCollection;
+
+    }
+
+    public static Map<UUID, ShopSign> getPlacing() {
+
+        return placing;
 
     }
 

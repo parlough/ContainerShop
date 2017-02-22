@@ -29,8 +29,13 @@ import com.flowpowered.math.vector.Vector3i;
 import com.meronat.containershop.entities.ShopSign;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.item.inventory.Container;
+import org.spongepowered.api.service.permission.Subject;
 import org.spongepowered.api.util.Direction;
+import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
 
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
@@ -63,6 +68,20 @@ public final class Util {
         }
 
         return Optional.ofNullable(sign);
+
+    }
+
+    public static int getLimit(Subject subject, String key) {
+
+        Optional<String> optionalLimit = subject.getOption(key);
+
+        return optionalLimit.map(Integer::parseInt).orElse(0);
+
+    }
+
+    public static Set<Container> getConnectedContainers(Location<World> location, ShopSign sign) {
+
+        return new HashSet<>();
 
     }
 
