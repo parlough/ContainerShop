@@ -29,13 +29,18 @@ import com.flowpowered.math.vector.Vector3i;
 import com.meronat.containershop.entities.ShopSign;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.data.manipulator.mutable.item.EnchantmentData;
+import org.spongepowered.api.data.meta.ItemEnchantment;
 import org.spongepowered.api.item.inventory.Container;
+import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.service.permission.Subject;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -82,6 +87,30 @@ public final class Util {
     public static Set<Container> getConnectedContainers(Location<World> location, ShopSign sign) {
 
         return new HashSet<>();
+
+    }
+
+    public static String getEnchantments(ItemStack stack) {
+
+        Optional<EnchantmentData> optionalEnchantmentData = stack.get(EnchantmentData.class);
+
+        if (optionalEnchantmentData.isPresent()) {
+
+            List<ItemEnchantment> enchantments = optionalEnchantmentData.get().enchantments().get();
+
+            List<String> names = new ArrayList<>();
+
+            for (ItemEnchantment e : enchantments) {
+
+                names.add(e.getEnchantment().getName() + " " + e.getLevel());
+
+            }
+
+            return String.join(", ", names);
+
+        }
+
+        return "";
 
     }
 

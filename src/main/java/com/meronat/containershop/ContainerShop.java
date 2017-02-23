@@ -28,7 +28,6 @@ package com.meronat.containershop;
 import com.flowpowered.math.vector.Vector3i;
 import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
-import com.meronat.containershop.bstats.Metrics;
 import com.meronat.containershop.configuration.Config;
 import com.meronat.containershop.configuration.ConfigManager;
 import com.meronat.containershop.database.Storage;
@@ -40,6 +39,7 @@ import com.meronat.containershop.listeners.InteractListener;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
+import org.bstats.Metrics;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.config.DefaultConfig;
@@ -50,15 +50,19 @@ import org.spongepowered.api.event.game.state.GamePostInitializationEvent;
 import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.plugin.Plugin;
-import org.spongepowered.api.service.economy.*;
-import org.spongepowered.api.service.economy.Currency;
+import org.spongepowered.api.service.economy.EconomyService;
 import org.spongepowered.api.service.permission.PermissionService;
 import org.spongepowered.api.util.Tristate;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Plugin(

@@ -34,7 +34,6 @@ import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.ItemStack;
-import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.service.sql.SqlService;
 
 import java.io.BufferedReader;
@@ -96,7 +95,6 @@ public final class Storage {
                                 "INFINITE BOOLEAN NOT NULL, " +
                                 "BUY DOUBLE NOT NULL, " +
                                 "SELL DOUBLE NOT NULL, " +
-                                "AMOUNT INTEGER NOT NULL," +
                                 "ITEM VARCHAR(2048) NOT NULL, " +
                                 "PRIMARY KEY(X, Y, Z))");
 
@@ -130,7 +128,7 @@ public final class Storage {
 
                 Connection conn = getConnection();
 
-                PreparedStatement sign = conn.prepareStatement("SELECT OWNER, INFINITE, BUY, SELL, AMOUNT, ITEM FROM SIGNS WHERE X = ? AND Y = ? AND Z = ?");
+                PreparedStatement sign = conn.prepareStatement("SELECT OWNER, INFINITE, BUY, SELL, ITEM FROM SIGNS WHERE X = ? AND Y = ? AND Z = ?");
 
                 PreparedStatement additional = conn.prepareStatement("SELECT USER_ID FROM ACCESSORS WHERE X = ? AND Y = ? AND Z = ?")
 
@@ -171,7 +169,6 @@ public final class Storage {
                             tempSign.getBoolean("INFINITE"),
                             tempSign.getDouble("BUY"),
                             tempSign.getDouble("SELL"),
-                            tempSign.getInt("AMOUNT"),
                             item
                     );
 
@@ -201,7 +198,7 @@ public final class Storage {
         try (
 
                 Connection conn = getConnection();
-                PreparedStatement ps = conn.prepareStatement("INSERT INTO SIGNS(OWNER, X, Y, Z, INFINITE, BUY, SELL, AMOUNT, ITEM) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)")
+                PreparedStatement ps = conn.prepareStatement("INSERT INTO SIGNS(OWNER, X, Y, Z, INFINITE, BUY, SELL, ITEM) VALUES(?, ?, ?, ?, ?, ?, ?, ?)")
 
         ) {
 
@@ -225,8 +222,7 @@ public final class Storage {
             ps.setBoolean(5, sign.isAdminShop());
             ps.setBigDecimal(6, sign.getBuyPrice().orElseGet(null));
             ps.setBigDecimal(7, sign.getSellPrice().orElseGet(null));
-            ps.setInt(8, sign.getAmount());
-            ps.setString(9, item);
+            ps.setString(8, item);
 
             ps.execute();
 
@@ -268,16 +264,15 @@ public final class Storage {
         try (
 
                 Connection conn = getConnection();
-                PreparedStatement ps = conn.prepareStatement("UPDATE SIGNS SET BUY = ?, SELL = ?, AMOUNT = ? WHERE X = ? AND Y = ? AND Z = ?")
+                PreparedStatement ps = conn.prepareStatement("UPDATE SIGNS SET BUY = ?, SELL = ? WHERE X = ? AND Y = ? AND Z = ?")
 
         ) {
 
             ps.setBigDecimal(1, sign.getBuyPrice().orElseGet(null));
             ps.setBigDecimal(2, sign.getSellPrice().orElseGet(null));
-            ps.setInt(3, sign.getAmount());
-            ps.setInt(4, location.getX());
-            ps.setInt(5, location.getY());
-            ps.setInt(6, location.getZ());
+            ps.setInt(3, location.getX());
+            ps.setInt(4, location.getY());
+            ps.setInt(5, location.getZ());
 
             ps.execute();
 

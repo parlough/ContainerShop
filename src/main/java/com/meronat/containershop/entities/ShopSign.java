@@ -27,9 +27,9 @@ package com.meronat.containershop.entities;
 
 import com.flowpowered.math.vector.Vector3i;
 import org.spongepowered.api.item.inventory.ItemStack;
-import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -42,89 +42,97 @@ public class ShopSign {
 
     private ItemStack item;
     private UUID owner;
-    private Set<UUID> accessors;
+    private Set<UUID> accessors = new HashSet<>();
 
     private BigDecimal buyPrice;
     private BigDecimal sellPrice;
     private Vector3i position;
-    private int amount;
 
     private long lastAccessed;
 
-    public ShopSign(UUID owner, boolean admin, double buy, double sell, int amount, ItemStack item) {
+    public ShopSign(UUID owner, boolean admin, double buy, double sell, ItemStack item) {
 
         this.owner = owner;
         this.adminShop = admin;
         this.buyPrice = BigDecimal.valueOf(buy);
         this.sellPrice = BigDecimal.valueOf(sell);
-        this.amount = amount;
         this.item = item;
 
     }
 
     public UUID getOwner() {
 
+        this.renewTime();
         return this.owner;
 
     }
 
     public void addAccessor(UUID accessor) {
 
+        this.renewTime();
         this.accessors.add(accessor);
 
     }
 
     public long getLastAccessed() {
 
+        this.renewTime();
         return this.lastAccessed;
 
     }
 
     public boolean isAdminShop() {
 
+        this.renewTime();
         return this.adminShop;
 
     }
 
     public Optional<BigDecimal> getBuyPrice() {
 
+        this.renewTime();
         return Optional.ofNullable(this.buyPrice);
 
     }
 
     public Optional<BigDecimal> getSellPrice() {
 
+        this.renewTime();
         return Optional.ofNullable(this.sellPrice);
-
-    }
-
-    public int getAmount() {
-
-        return this.amount;
 
     }
 
     public boolean isAccessor(UUID uuid) {
 
+        this.renewTime();
         return uuid.equals(this.owner) || this.accessors.contains(uuid);
 
     }
 
     public ItemStack getItem() {
 
+        this.renewTime();
         return this.item;
 
     }
 
     public void setPosition(Vector3i position) {
 
+        this.renewTime();
         this.position = position;
 
     }
 
     public Vector3i getPosition() {
 
+        this.renewTime();
         return this.position;
+
+    }
+
+    public void renewTime() {
+
+        this.lastAccessed = System.currentTimeMillis();
 
     }
 
