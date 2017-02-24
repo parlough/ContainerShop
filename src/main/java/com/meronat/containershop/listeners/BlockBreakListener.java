@@ -34,6 +34,7 @@ import org.spongepowered.api.data.Transaction;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
+import org.spongepowered.api.event.world.ExplosionEvent;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.chat.ChatTypes;
 import org.spongepowered.api.text.format.TextColors;
@@ -95,6 +96,13 @@ public class BlockBreakListener {
             event.setCancelled(true);
 
         }
+
+    }
+
+    @Listener
+    public void onExplosionEvent(ExplosionEvent.Detonate event) {
+
+        // TODO this
 
     }
 

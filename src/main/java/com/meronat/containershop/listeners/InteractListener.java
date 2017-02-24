@@ -35,6 +35,7 @@ import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.Item;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.entity.living.player.gamemode.GameModes;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.cause.Cause;
@@ -123,6 +124,7 @@ public class InteractListener {
             }
 
             Text info = Text.builder()
+                .append(Text.of(TextColors.DARK_GREEN, "Id:", TextColors.GRAY, itemStack.getItem().getId()), Text.NEW_LINE)
                 .append(Text.of(TextColors.DARK_GREEN, "Name: ", TextColors.GRAY,  itemStack.getItem().getName()), Text.NEW_LINE)
                 .append(Text.of(TextColors.DARK_GREEN, "Amount: ", TextColors.GRAY, itemStack.getQuantity(), Text.NEW_LINE))
                 .append(Text.of(TextColors.DARK_GREEN, "Buy price: ", TextColors.GRAY, buy, Text.NEW_LINE))
@@ -137,6 +139,14 @@ public class InteractListener {
                 .build());
 
         } else {
+
+            if (player.get(Keys.GAME_MODE).isPresent() && player.get(Keys.GAME_MODE).get().equals(GameModes.CREATIVE)) {
+
+                player.sendMessage(Text.of(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You cannot be in creative mode and use shops.")));
+
+                return;
+
+            }
 
             if (player.getUniqueId().equals(shopSign.getOwner())) {
 
@@ -282,7 +292,72 @@ public class InteractListener {
     @Listener
     public void onLeftClick(InteractBlockEvent.Primary event, @Root Player player) {
 
+        BlockSnapshot bs = event.getTargetBlock();
 
+        if (!bs.getState().getType().equals(BlockTypes.WALL_SIGN)) {
+
+            return;
+
+        }
+
+        Optional<Location<World>> optionalLocation = bs.getLocation();
+
+        if (!optionalLocation.isPresent()) {
+
+            return;
+
+        }
+
+        Location<World> location = optionalLocation.get();
+
+        Optional<ShopSign> optionalShop = ContainerShop.getSignCollection().getSign(location.getBlockPosition());
+
+        if (!optionalShop.isPresent()) {
+
+            return;
+
+        }
+
+        ShopSign shopSign = optionalShop.get();
+
+        if (player.get(Keys.GAME_MODE).isPresent() && player.get(Keys.GAME_MODE).get().equals(GameModes.CREATIVE)) {
+
+            player.sendMessage(Text.of(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You cannot be in creative mode and use shops.")));
+
+            return;
+
+        }
+
+        if (player.getUniqueId().equals(shopSign.getOwner())) {
+
+            player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You cannot sell to your own shop."));
+
+            return;
+
+        }
+
+        ItemStack itemStack = shopSign.getItem();
+
+        Optional<ItemStack> optionalTempStack = player.getInventory().query(itemStack).peek();
+
+        if (!optionalTempStack.isPresent() || optionalTempStack.get().getQuantity() < itemStack.getQuantity()) {
+
+            player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You do not have enough of this item to sell."));
+
+            return;
+
+        }
+
+        for (Container c : Util.getConnectedContainers(location, shopSign)) {
+
+            // TODO Try to see if there is space in container for items, if not don't buy
+            // If it is full, inform the owner of the sign that their is no where to put the items
+
+        }
+
+        // TODO Try to do the economy stuff, if it doesn't work tell them
+
+        // TODO Attempt to move item from player's inventory to one of the connected containers
 
     }
 

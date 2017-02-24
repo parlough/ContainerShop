@@ -86,6 +86,7 @@ public final class Util {
 
     public static Set<Container> getConnectedContainers(Location<World> location, ShopSign sign) {
 
+        // TODO Actually do this
         return new HashSet<>();
 
     }

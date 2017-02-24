@@ -38,20 +38,8 @@ public class Config {
     @Setting(value = "allow-creative-mode", comment = "Should players in creative mode be able to use shops?")
     private boolean creative = false;
 
-    @Setting(value = "shifting-full-stack-sales", comment = "If a player is shifting should they buy/sell in full stacks?")
-    private boolean shifting = true;
-
     @Setting(value = "owner-editing", comment = "Should users be able to edit their own shop signs?")
     private boolean editing = true;
-
-    @Setting(value = "remove-shop-sign-when-empty", comment = "Should the shop be removed when the container is out of stock?")
-    private boolean removeShopWhenEmpty = false;
-
-    @Setting(value = "remove-container-when-empty", comment = "Should the containers also be removed?")
-    private boolean removeContainerWhenEmpty = false;
-
-    @Setting(value = "allow-creation-by-commands", comment = "Should players be able to create shops with commands?")
-    private boolean withCommands = true;
 
     @Setting(value = "send-owner-if-out-of-stock", comment = "Should a message be sent if their shop is out of stock?")
     private boolean outOfStock = false;
@@ -80,33 +68,9 @@ public class Config {
 
     }
 
-    public boolean shiftTrading() {
-
-        return this.shifting;
-
-    }
-
     public boolean canEdit() {
 
         return this.editing;
-
-    }
-
-    public boolean removeShopWhenEmpty() {
-
-        return this.removeShopWhenEmpty;
-
-    }
-
-    public boolean removeContainerWhenEmpty() {
-
-        return this.removeContainerWhenEmpty;
-
-    }
-
-    public boolean withCommands() {
-
-        return this.withCommands;
 
     }
 

@@ -49,7 +49,7 @@ public class TileEntitySpawnListener {
 
             if (!sign.getBlock().getType().equals(BlockTypes.WALL_SIGN)) {
 
-                return;
+                continue;
 
             }
 
