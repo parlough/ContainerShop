@@ -28,6 +28,7 @@ package com.meronat.containershop.listeners;
 import com.meronat.containershop.ContainerShop;
 import com.meronat.containershop.Util;
 import com.meronat.containershop.entities.ShopSign;
+import com.meronat.containershop.entities.ShopSignCollection;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.data.Transaction;
@@ -38,6 +39,8 @@ import org.spongepowered.api.event.world.ExplosionEvent;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.chat.ChatTypes;
 import org.spongepowered.api.text.format.TextColors;
+import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
 
 import java.util.Optional;
 
@@ -100,10 +103,32 @@ public class BlockBreakListener {
     }
 
     @Listener
-    public void onExplosionEvent(ExplosionEvent.Detonate event) {
+    public void onExplosionEvent(ExplosionEvent.Post event) {
 
-        // TODO this
+        ShopSignCollection signCollection = ContainerShop.getSignCollection();
+
+        for (Transaction<BlockSnapshot> t : event.getTransactions()) {
+
+            if (t.isValid() && t.getOriginal().getLocation().isPresent()) {
+
+                Location<World> location = t.getOriginal().getLocation().get();
+
+                if (signCollection.getSign(location.getBlockPosition()).isPresent()) {
+
+                    t.setValid(false);
+
+                } else if (Util.getAttachedSign(t.getOriginal()).isPresent()) {
+
+                    t.setValid(false);
+
+                }
+
+            }
+
+        }
 
     }
+
+    // TODO Protect from pistons pushing if containers are ever broken by that
 
 }

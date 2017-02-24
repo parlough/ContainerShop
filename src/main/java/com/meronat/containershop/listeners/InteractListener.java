@@ -338,9 +338,9 @@ public class InteractListener {
 
         ItemStack itemStack = shopSign.getItem();
 
-        Optional<ItemStack> optionalTempStack = player.getInventory().query(itemStack).peek();
+        Optional<ItemStack> optionalTempStack = player.getInventory().query(itemStack).poll();
 
-        if (!optionalTempStack.isPresent() || optionalTempStack.get().getQuantity() < itemStack.getQuantity()) {
+        if (!optionalTempStack.isPresent() || optionalTempStack.get().getQuantity() != itemStack.getQuantity()) {
 
             player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You do not have enough of this item to sell."));
 
@@ -348,16 +348,99 @@ public class InteractListener {
 
         }
 
-        for (Container c : Util.getConnectedContainers(location, shopSign)) {
+        Optional<BigDecimal> optionalSellPrice = shopSign.getSellPrice();
 
-            // TODO Try to see if there is space in container for items, if not don't buy
-            // If it is full, inform the owner of the sign that their is no where to put the items
+        if (!optionalSellPrice.isPresent()) {
+
+            player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You cannot sell to this shop."));
+
+            return;
 
         }
 
-        // TODO Try to do the economy stuff, if it doesn't work tell them
+        Container containerToOffer = null;
 
-        // TODO Attempt to move item from player's inventory to one of the connected containers
+        if (!shopSign.isAdminShop()) {
+
+            for (Container c : Util.getConnectedContainers(location, shopSign)) {
+
+                ItemStack clone = itemStack.copy();
+
+                if (c.offer(clone).getRejectedItems().size() != 0) {
+
+                    c.queryAny(clone).poll(itemStack.getQuantity() - clone.getQuantity());
+                    continue;
+
+                }
+
+                c.queryAny(clone).poll(itemStack.getQuantity());
+
+                containerToOffer = c;
+
+                break;
+
+            }
+
+        }
+
+        if (containerToOffer == null) {
+
+            player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "This shop is out of stock."));
+
+            // TODO Send message to owner of shop
+
+            return;
+
+        }
+
+        //noinspection ConstantConditions
+        PluginContainer pluginContainer = Sponge.getPluginManager().getPlugin("containershop").get();
+
+        EconomyService economyService = ContainerShop.getEconomyService();
+
+        //noinspection ConstantConditions
+        UniqueAccount account = economyService.getOrCreateAccount(player.getUniqueId()).get();
+
+        final ResultType econResult;
+
+        if (shopSign.isAdminShop()) {
+
+            econResult = account.deposit(economyService.getDefaultCurrency(), optionalSellPrice.get(), Cause.source(pluginContainer).build()).getResult();
+
+        } else {
+
+            //noinspection ConstantConditions
+            econResult = economyService.getOrCreateAccount(shopSign.getOwner()).get().transfer(
+                account,
+                economyService.getDefaultCurrency(),
+                optionalSellPrice.get(),
+                Cause.source(pluginContainer).build()).getResult();
+
+        }
+
+        if (!econResult.equals(ResultType.SUCCESS)) {
+
+            if (econResult.equals(ResultType.ACCOUNT_NO_FUNDS)) {
+
+                player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "The shop owner does not have enough money."));
+
+            } else {
+
+                player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "There was a problem transferring funds."));
+
+            }
+
+            return;
+
+        }
+
+        if (!shopSign.isAdminShop()) {
+
+            containerToOffer.offer(optionalTempStack.get());
+
+        }
+
+        player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.DARK_GREEN, "Successfully sold items!"));
 
     }
 

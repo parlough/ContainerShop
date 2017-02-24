@@ -160,6 +160,8 @@ public class BlockPlaceListener {
 
             ContainerShop.getSignCollection().put(bs.getPosition(), shopSign);
 
+            ContainerShop.getStorage().createSign(bs.getPosition(), shopSign);
+
             ContainerShop.getPlacing().remove(player.getUniqueId());
 
         }
