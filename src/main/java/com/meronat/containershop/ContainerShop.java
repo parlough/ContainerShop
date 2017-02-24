@@ -28,6 +28,7 @@ package com.meronat.containershop;
 import com.flowpowered.math.vector.Vector3i;
 import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
+import com.meronat.containershop.commands.CreateCommand;
 import com.meronat.containershop.configuration.Config;
 import com.meronat.containershop.configuration.ConfigManager;
 import com.meronat.containershop.database.Storage;
@@ -36,12 +37,15 @@ import com.meronat.containershop.entities.ShopSignCollection;
 import com.meronat.containershop.listeners.BlockBreakListener;
 import com.meronat.containershop.listeners.BlockPlaceListener;
 import com.meronat.containershop.listeners.InteractListener;
+import com.meronat.containershop.listeners.TileEntitySpawnListener;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import org.bstats.Metrics;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.command.args.GenericArguments;
+import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.event.EventManager;
 import org.spongepowered.api.event.Listener;
@@ -52,6 +56,7 @@ import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.service.economy.EconomyService;
 import org.spongepowered.api.service.permission.PermissionService;
+import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Tristate;
 
 import java.io.IOException;
@@ -148,7 +153,17 @@ public class ContainerShop {
 
         }
 
-        // TODO Register commands
+        Sponge.getCommandManager().register(this, CommandSpec.builder()
+            .description(Text.of("Chest shop create command"))
+            .permission("containershop.normal.create")
+            .arguments(GenericArguments.optionalWeak(
+                GenericArguments.flags()
+                    .valueFlag(GenericArguments.doubleNum(Text.of("sell")), "s", "-sell")
+                    .valueFlag(GenericArguments.doubleNum(Text.of("buy")),"b", "-buy")
+                    .permissionFlag("containershops.admin.unlimitedshops", "a")
+                    .buildWith(GenericArguments.none())))
+            .executor(new CreateCommand())
+            .build(), "shopcreate");
 
         Optional<EconomyService> optionalEconomyService = Sponge.getServiceManager().provide(EconomyService.class);
 
@@ -187,7 +202,7 @@ public class ContainerShop {
         Sponge.getScheduler().createTaskBuilder()
                 .async()
                 .name("signrecycler")
-                .interval(10, TimeUnit.SECONDS)
+                .interval(5, TimeUnit.MINUTES)
                 .execute(() -> {
 
                     ShopSignCollection shopSignCollection = ContainerShop.getSignCollection();
@@ -215,8 +230,7 @@ public class ContainerShop {
         eventManager.registerListeners(this, new BlockBreakListener());
         eventManager.registerListeners(this, new BlockPlaceListener());
         eventManager.registerListeners(this, new InteractListener());
-
-        // TODO Register interact listener(s)
+        eventManager.registerListeners(this, new TileEntitySpawnListener());
 
     }
 

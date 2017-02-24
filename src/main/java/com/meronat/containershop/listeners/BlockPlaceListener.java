@@ -29,16 +29,22 @@ import com.meronat.containershop.ContainerShop;
 import com.meronat.containershop.entities.ShopSign;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.data.Transaction;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
 import org.spongepowered.api.event.filter.cause.Root;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -81,17 +87,78 @@ public class BlockPlaceListener {
 
             }
 
-            if (!ContainerShop.getConfig().getContainers().contains(optionalLocation.get().getRelative(optionalDirections.get().iterator().next()).getBlockType().getId())) {
+            Location<World> location = optionalLocation.get();
+
+            if (!ContainerShop.getConfig().getContainers().contains(location.getRelative(optionalDirections.get().iterator().next()).getBlockType().getId())) {
 
                 return;
 
             }
 
+            Optional<TileEntity> optionalTileEntity = location.getTileEntity();
+
+            if (!optionalTileEntity.isPresent()) {
+
+                player.sendMessage(Text.of(TextColors.RED, "Failed to create the shop, try again."));
+
+                return;
+
+            }
+
+            final String name;
+
+            if (shopSign.isAdminShop()) {
+
+                name = "Admin";
+
+            } else {
+
+                name = player.getName();
+
+            }
+
+            final String buySell;
+
+            Optional<BigDecimal> optionalBuy = shopSign.getBuyPrice();
+
+            Optional<BigDecimal> optionalSell = shopSign.getSellPrice();
+
+            if (optionalBuy.isPresent() && optionalSell.isPresent()) {
+
+                buySell = "S " + optionalSell.get().toPlainString() + ":" + optionalBuy.get().toPlainString() + " B";
+
+            } else if (optionalBuy.isPresent()) {
+
+                buySell = "B " + optionalBuy.get().toPlainString();
+
+            } else if (optionalSell.isPresent()) {
+
+                buySell = "S " + optionalSell.get().toPlainString();
+
+            } else {
+
+                player.sendMessage(Text.of(TextColors.RED, "The shop cannot have neither a buy or sell price. You must recreate your shop."));
+
+                ContainerShop.getPlacing().remove(player.getUniqueId());
+
+                return;
+
+            }
+
+            List<Text> signLines = new ArrayList<>();
+
+            signLines.add(Text.of(name));
+            signLines.add(Text.of(shopSign.getItem().getQuantity()));
+            signLines.add(Text.of(buySell));
+            signLines.add(Text.of(shopSign.getItem().getItem().getName()));
+
+            TileEntity sign = optionalTileEntity.get();
+
+            sign.offer(Keys.SIGN_LINES, signLines);
+
             shopSign.setPosition(bs.getPosition());
 
             ContainerShop.getSignCollection().put(bs.getPosition(), shopSign);
-
-            // TODO Modify the sign lines
 
             ContainerShop.getPlacing().remove(player.getUniqueId());
 

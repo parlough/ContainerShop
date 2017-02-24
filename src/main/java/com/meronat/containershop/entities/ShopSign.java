@@ -57,6 +57,7 @@ public class ShopSign {
         this.buyPrice = BigDecimal.valueOf(buy);
         this.sellPrice = BigDecimal.valueOf(sell);
         this.item = item;
+        this.lastAccessed = System.currentTimeMillis();
 
     }
 

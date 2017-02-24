@@ -41,6 +41,7 @@ import org.spongepowered.api.event.cause.Cause;
 import org.spongepowered.api.event.cause.entity.spawn.EntitySpawnCause;
 import org.spongepowered.api.event.cause.entity.spawn.SpawnTypes;
 import org.spongepowered.api.event.filter.cause.Root;
+import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.Container;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
@@ -82,7 +83,6 @@ public class InteractListener {
         }
 
         Location<World> location = optionalLocation.get();
-
 
         Optional<ShopSign> optionalShop = ContainerShop.getSignCollection().getSign(location.getBlockPosition());
 
@@ -138,11 +138,19 @@ public class InteractListener {
 
         } else {
 
+            if (player.getUniqueId().equals(shopSign.getOwner())) {
+
+                player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You cannot buy from your own shop."));
+
+                return;
+
+            }
+
             Optional<BigDecimal> optionalBuyPrice = shopSign.getBuyPrice();
 
             if (!optionalBuyPrice.isPresent()) {
 
-                player.sendMessage(Text.of(TextColors.RED, "You cannot buy from this shop."));
+                player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You cannot buy from this shop."));
 
                 return;
 
@@ -189,69 +197,83 @@ public class InteractListener {
 
             }
 
-            boolean notEnoughStock = true;
+            ItemStack stack = ItemStack.of(ItemTypes.NONE, 0);
 
-            for (Container c : Util.getConnectedContainers(location, shopSign)) {
+            if (shopSign.isAdminShop()) {
 
-                if (!c.contains(itemStack)) {
+                stack = shopSign.getItem().copy();
 
-                    continue;
+            } else {
 
-                }
+                for (Container c : Util.getConnectedContainers(location, shopSign)) {
 
-                Optional<ItemStack> optionalStack = c.query(itemStack).poll(itemStack.getQuantity());
+                    if (!c.contains(itemStack)) {
 
-                if (!optionalStack.isPresent()) {
+                        continue;
 
-                    continue;
+                    }
 
-                }
+                    Optional<ItemStack> optionalStack = c.query(itemStack).poll(itemStack.getQuantity());
 
-                ItemStack stack = optionalStack.get();
+                    if (!optionalStack.isPresent()) {
 
-                if (!(stack.getQuantity() == itemStack.getQuantity())) {
+                        continue;
 
-                    continue;
+                    }
 
-                }
+                    if (!(optionalStack.get().getQuantity() == itemStack.getQuantity())) {
 
-                notEnoughStock = false;
+                        continue;
 
-                InventoryTransactionResult result = player.getInventory().offer(stack);
+                    }
 
-                player.sendMessage(Text.of(TextColors.DARK_GREEN, "Successfully purchased items."));
+                    stack = optionalStack.get();
 
-                Collection<ItemStackSnapshot> rejectedItems = result.getRejectedItems();
-
-                if (rejectedItems.isEmpty()) {
-
-                    return;
+                    break;
 
                 }
-
-                Location<World> playerLocation = player.getLocation();
-
-                World world = playerLocation.getExtent();
-
-                for (ItemStackSnapshot i : rejectedItems) {
-
-                    Item rejected = (Item) world.createEntity(EntityTypes.ITEM, playerLocation.getPosition());
-
-                    rejected.offer(Keys.REPRESENTED_ITEM, i);
-
-                    world.spawnEntity(rejected, Cause.source(EntitySpawnCause.builder().entity(rejected).type(SpawnTypes.PLUGIN).build()).owner(pluginContainer).build());
-
-                }
-
-                player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "Some items you bought were placed on the ground."));
 
             }
 
-            if (notEnoughStock) {
+            if (stack.getItem().equals(ItemTypes.NONE)) {
 
                 player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "This shop does not have enough stock."));
 
+                return;
+
             }
+
+            InventoryTransactionResult result = player.getInventory().offer(stack);
+
+            player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.DARK_GREEN, "Successfully purchased items."));
+
+            Collection<ItemStackSnapshot> rejectedItems = result.getRejectedItems();
+
+            if (rejectedItems.isEmpty()) {
+
+                return;
+
+            }
+
+            Location<World> playerLocation = player.getLocation();
+
+            World world = playerLocation.getExtent();
+
+            for (ItemStackSnapshot i : rejectedItems) {
+
+                Item rejected = (Item) world.createEntity(EntityTypes.ITEM, playerLocation.getPosition());
+
+                rejected.offer(Keys.REPRESENTED_ITEM, i);
+
+                world.spawnEntity(rejected,
+                    Cause.source(EntitySpawnCause.builder()
+                        .entity(rejected)
+                        .type(SpawnTypes.PLUGIN)
+                        .build()).owner(pluginContainer).build());
+
+            }
+
+            player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "Some items you bought were placed on the ground."));
 
         }
 

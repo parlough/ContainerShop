@@ -100,14 +100,13 @@ public class CreateCommand implements CommandExecutor {
 
         }
 
-        boolean admin = args.getOne("admin").isPresent();
+        boolean admin = args.hasAny("a");
 
-        if (admin && !player.hasPermission("containershops.admin.unlimitedshop")) {
+        if (admin && !player.hasPermission("containershops.admin.unlimitedshops")) {
 
             throw new CommandException(Text.of(TextColors.RED, "You do not have permission to create admin shops."));
 
         }
-
 
         Optional<Double> optionalSellPrice = args.getOne("sell");
 
