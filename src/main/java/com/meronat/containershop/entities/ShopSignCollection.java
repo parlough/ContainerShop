@@ -27,17 +27,24 @@ package com.meronat.containershop.entities;
 
 import com.flowpowered.math.vector.Vector3i;
 import com.meronat.containershop.ContainerShop;
+import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
 
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class ShopSignCollection extends ConcurrentHashMap<Vector3i, ShopSign> {
+public final class ShopSignCollection extends ConcurrentHashMap<Location<World>, ShopSign> {
 
-    public Optional<ShopSign> getSign(Vector3i location) {
+    public Optional<ShopSign> getSign(Location<World> location) {
 
         if (!this.containsKey(location)) {
 
-            ContainerShop.getStorage().getSign(location).ifPresent(s -> super.put(location, s));
+            ContainerShop.getStorage().getSign(location).ifPresent(s -> {
+
+                s.setLocation(location);
+                super.put(location, s);
+
+            });
 
         }
 

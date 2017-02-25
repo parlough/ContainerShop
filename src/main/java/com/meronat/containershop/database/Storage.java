@@ -28,6 +28,7 @@ package com.meronat.containershop.database;
 import com.flowpowered.math.vector.Vector3i;
 import com.google.common.reflect.TypeToken;
 import com.meronat.containershop.ContainerShop;
+import com.meronat.containershop.Util;
 import com.meronat.containershop.entities.ShopSign;
 import ninja.leaping.configurate.gson.GsonConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
@@ -35,6 +36,8 @@ import org.spongepowered.api.Sponge;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.service.sql.SqlService;
+import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -89,6 +92,7 @@ public final class Storage {
                 PreparedStatement mainPS = conn.prepareStatement(
                         "CREATE TABLE IF NOT EXISTS SIGNS(" +
                                 "OWNER CHARACTER(36) NOT NULL, " +
+                                "WORLD CHARACTER(36) NOT NULL, " +
                                 "X INTEGER NOT NULL, " +
                                 "Y INTEGER NOT NULL, " +
                                 "Z INTEGER NOT NULL, " +
@@ -100,6 +104,7 @@ public final class Storage {
 
                 PreparedStatement accessPS = conn.prepareStatement(
                         "CREATE TABLE IF NOT EXISTS ACCESSORS(" +
+                                "WORLD CHARACTER(36) NOT NULL, " +
                                 "X INTEGER NOT NULL, " +
                                 "Y INTEGER NOT NULL, " +
                                 "Z INTEGER NOT NULL, " +
@@ -120,7 +125,7 @@ public final class Storage {
 
     }
 
-    public Optional<ShopSign> getSign(Vector3i location) {
+    public Optional<ShopSign> getSign(Location<World> location) {
 
         ShopSign shopSign = null;
 
@@ -128,19 +133,23 @@ public final class Storage {
 
                 Connection conn = getConnection();
 
-                PreparedStatement sign = conn.prepareStatement("SELECT OWNER, INFINITE, BUY, SELL, ITEM FROM SIGNS WHERE X = ? AND Y = ? AND Z = ?");
+                PreparedStatement sign = conn.prepareStatement("SELECT OWNER, INFINITE, BUY, SELL, ITEM FROM SIGNS WHERE X = ? AND Y = ? AND Z = ? AND WORLD = ?");
 
-                PreparedStatement additional = conn.prepareStatement("SELECT USER_ID FROM ACCESSORS WHERE X = ? AND Y = ? AND Z = ?")
+                PreparedStatement additional = conn.prepareStatement("SELECT USER_ID FROM ACCESSORS WHERE X = ? AND Y = ? AND Z = ? AND WORLD = ?")
 
         ) {
 
-            sign.setInt(1, location.getX());
-            sign.setInt(2, location.getY());
-            sign.setInt(3, location.getZ());
+            Vector3i pos = location.getBlockPosition();
 
-            additional.setInt(1, location.getX());
-            additional.setInt(2, location.getY());
-            additional.setInt(3, location.getZ());
+            sign.setInt(1, pos.getX());
+            sign.setInt(2, pos.getY());
+            sign.setInt(3, pos.getZ());
+            sign.setString(4, location.getExtent().getUniqueId().toString());
+
+            additional.setInt(1, pos.getX());
+            additional.setInt(2, pos.getY());
+            additional.setInt(3, pos.getZ());
+            additional.setString(4, location.getExtent().getUniqueId().toString());
 
             try (
 
@@ -152,10 +161,10 @@ public final class Storage {
                 // Should only have sign per location.
                 if (tempSign.next()) {
 
-                    ItemStack item = ItemStack.of(ItemTypes.NONE, 0);
+                    ItemStack item = null;
 
                     try {
-                        item = GsonConfigurationLoader.builder().setSource(() -> new BufferedReader(new StringReader(tempSign.getString("ITEM")))).build().load().getValue(TypeToken.of(ItemStack.class));
+                        item = Util.deserializeItemStack(tempSign.getString("ITEM"));
                     } catch (ObjectMappingException e) {
                         ContainerShop.getLogger().error("Failed to deserialize item stack.");
                         e.printStackTrace();
@@ -193,36 +202,39 @@ public final class Storage {
 
     }
 
-    public void createSign(Vector3i location, ShopSign sign) {
+    public void createSign(ShopSign sign) {
 
         try (
 
                 Connection conn = getConnection();
-                PreparedStatement ps = conn.prepareStatement("INSERT INTO SIGNS(OWNER, X, Y, Z, INFINITE, BUY, SELL, ITEM) VALUES(?, ?, ?, ?, ?, ?, ?, ?)")
+                PreparedStatement ps = conn.prepareStatement("INSERT INTO SIGNS(OWNER, WORLD, X, Y, Z, INFINITE, BUY, SELL, ITEM) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)")
 
         ) {
 
             String item = null;
 
+            Vector3i pos = sign.getLocation().getBlockPosition();
+
             try {
 
-                item = GsonConfigurationLoader.builder().setSink(() -> new BufferedWriter(new StringWriter())).build().createEmptyNode().setValue(TypeToken.of(ItemStack.class), sign.getItem()).toString();
+                item = Util.serializeItemStack(sign.getItem());
 
-            } catch (ObjectMappingException e) {
+            } catch (ObjectMappingException | IOException e) {
 
-                ContainerShop.getLogger().error("Failed to serialize the ItemStack snapshot of the shop at: " + location.toString());
+                ContainerShop.getLogger().error("Failed to serialize the ItemStack snapshot of the shop at: " + pos.toString());
                 e.printStackTrace();
 
             }
 
             ps.setString(1, sign.getOwner().toString());
-            ps.setInt(2, location.getX());
-            ps.setInt(3, location.getY());
-            ps.setInt(4, location.getZ());
-            ps.setBoolean(5, sign.isAdminShop());
-            ps.setBigDecimal(6, sign.getBuyPrice().orElseGet(null));
-            ps.setBigDecimal(7, sign.getSellPrice().orElseGet(null));
-            ps.setString(8, item);
+            ps.setString(2, sign.getLocation().getExtent().getUniqueId().toString());
+            ps.setInt(3, pos.getX());
+            ps.setInt(4, pos.getY());
+            ps.setInt(5, pos.getZ());
+            ps.setBoolean(6, sign.isAdminShop());
+            ps.setBigDecimal(7, sign.getBuyPrice().orElseGet(null));
+            ps.setBigDecimal(8, sign.getSellPrice().orElseGet(null));
+            ps.setString(9, item);
 
             ps.execute();
 
@@ -235,18 +247,21 @@ public final class Storage {
 
     }
 
-    public void deleteSign(Vector3i location) {
+    public void deleteSign(Location<World> location) {
 
         try (
 
                 Connection conn = getConnection();
-                PreparedStatement ps = conn.prepareStatement("DELETE FROM SIGNS WHERE X = ? AND Y = ? AND Z = ?")
+                PreparedStatement ps = conn.prepareStatement("DELETE FROM SIGNS WHERE X = ? AND Y = ? AND Z = ? AND WORLD = ?")
 
         ) {
 
-            ps.setInt(1, location.getX());
-            ps.setInt(2, location.getY());
-            ps.setInt(3, location.getZ());
+            Vector3i pos = location.getBlockPosition();
+
+            ps.setInt(1, pos.getX());
+            ps.setInt(2, pos.getY());
+            ps.setInt(3, pos.getZ());
+            ps.setString(4, location.getExtent().getUniqueId().toString());
 
             ps.execute();
 
@@ -259,38 +274,40 @@ public final class Storage {
 
     }
 
-    public void updateSign(Vector3i location, ShopSign sign) {
+    public void updateSign(ShopSign sign) {
 
         try (
 
                 Connection conn = getConnection();
-                PreparedStatement ps = conn.prepareStatement("UPDATE SIGNS SET BUY = ?, SELL = ? WHERE X = ? AND Y = ? AND Z = ?")
+                PreparedStatement ps = conn.prepareStatement("UPDATE SIGNS SET BUY = ?, SELL = ? WHERE X = ? AND Y = ? AND Z = ? and WORLD = ?")
 
         ) {
+
+            Vector3i pos = sign.getLocation().getBlockPosition();
 
             ps.setBigDecimal(1, sign.getBuyPrice().orElseGet(null));
             ps.setBigDecimal(2, sign.getSellPrice().orElseGet(null));
-            ps.setInt(3, location.getX());
-            ps.setInt(4, location.getY());
-            ps.setInt(5, location.getZ());
+            ps.setInt(3, pos.getX());
+            ps.setInt(4, pos.getY());
+            ps.setInt(5, pos.getZ());
 
             ps.execute();
 
         } catch (SQLException e) {
 
-            ContainerShop.getLogger().error("Failed to update a shop at " + location.toString() + " in the SQL database.");
+            ContainerShop.getLogger().error("Failed to update a shop at " + sign.getLocation().getBlockPosition().toString() + " in the SQL database.");
             e.printStackTrace();
 
         }
 
     }
 
-    public void addAccessor(Vector3i location, UUID accessor) {
+    public void addAccessor(Location<World> location, UUID accessor) {
 
         try (
 
                 Connection conn = getConnection();
-                PreparedStatement ps = conn.prepareStatement("INSERT INTO ACCESSORS(X, Y, Z, USER_ID) VALUES(?, ?, ?, ?)")
+                PreparedStatement ps = conn.prepareStatement("INSERT INTO ACCESSORS(WORLD, X, Y, Z, USER_ID) VALUES(?, ?, ?, ?, ?)")
 
         ) {
 
@@ -305,12 +322,12 @@ public final class Storage {
 
     }
 
-    public void removeAccessor(Vector3i location, UUID accessor) {
+    public void removeAccessor(Location<World> location, UUID accessor) {
 
         try (
 
                 Connection conn = getConnection();
-                PreparedStatement ps = conn.prepareStatement("DELETE FROM ACCESSORS WHERE X = ? AND Y = ? AND Z = ? AND USER_ID = ?")
+                PreparedStatement ps = conn.prepareStatement("DELETE FROM ACCESSORS WHERE WORLD = ? AND X = ? AND Y = ? AND Z = ? AND USER_ID = ?")
 
         ) {
 
@@ -318,19 +335,22 @@ public final class Storage {
 
         } catch (SQLException e) {
 
-            ContainerShop.getLogger().error("Failed to remove " + accessor.toString() + " from a shop at: " + location.toString());
+            ContainerShop.getLogger().error("Failed to remove " + accessor.toString() + " from a shop at: " + location.getBlockPosition().toString());
             e.printStackTrace();
 
         }
 
     }
 
-    private void executeAccessorUpdate(PreparedStatement ps, Vector3i location, UUID accessor) throws SQLException {
+    private void executeAccessorUpdate(PreparedStatement ps, Location<World> location, UUID accessor) throws SQLException {
 
-        ps.setInt(1, location.getX());
-        ps.setInt(2, location.getY());
-        ps.setInt(3, location.getZ());
-        ps.setString(4, accessor.toString());
+        Vector3i pos = location.getBlockPosition();
+
+        ps.setString(1, location.getExtent().getUniqueId().toString());
+        ps.setInt(2, pos.getX());
+        ps.setInt(3, pos.getY());
+        ps.setInt(4, pos.getZ());
+        ps.setString(5, accessor.toString());
 
         ps.execute();
 

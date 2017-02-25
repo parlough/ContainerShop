@@ -27,15 +27,19 @@ package com.meronat.containershop.listeners;
 
 import com.meronat.containershop.ContainerShop;
 import com.meronat.containershop.entities.ShopSign;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.data.Transaction;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
+import org.spongepowered.api.event.cause.Cause;
 import org.spongepowered.api.event.filter.cause.Root;
+import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.util.Direction;
@@ -52,6 +56,8 @@ public class BlockPlaceListener {
 
     @Listener
     public void onBlockPlace(ChangeBlockEvent.Place event, @Root Player player) {
+
+        // TODO Check they aren't placing it on a chest which is already a shop that's not theirs
 
         for (Transaction<BlockSnapshot> t : event.getTransactions()) {
 
@@ -71,14 +77,6 @@ public class BlockPlaceListener {
 
             }
 
-            Optional<Set<Direction>> optionalDirections = bs.get(Keys.CONNECTED_DIRECTIONS);
-
-            if (!optionalDirections.isPresent()) {
-
-                return;
-
-            }
-
             Optional<Location<World>> optionalLocation = bs.getLocation();
 
             if (!optionalLocation.isPresent()) {
@@ -89,7 +87,15 @@ public class BlockPlaceListener {
 
             Location<World> location = optionalLocation.get();
 
-            if (!ContainerShop.getConfig().getContainers().contains(location.getRelative(optionalDirections.get().iterator().next()).getBlockType().getId())) {
+            Optional<Direction> optionalDirection = bs.getExtendedState().get(Keys.DIRECTION);
+
+            if (!optionalDirection.isPresent()) {
+
+                return;
+
+            }
+
+            if (!ContainerShop.getConfig().getContainers().contains(location.getRelative(optionalDirection.get().getOpposite()).getBlockType().getId())) {
 
                 return;
 
@@ -150,19 +156,24 @@ public class BlockPlaceListener {
             signLines.add(Text.of(name));
             signLines.add(Text.of(shopSign.getItem().getQuantity()));
             signLines.add(Text.of(buySell));
-            signLines.add(Text.of(shopSign.getItem().getItem().getName()));
+            signLines.add(Text.of(shopSign.getItem().getTranslation().get()));
 
             TileEntity sign = optionalTileEntity.get();
 
-            sign.offer(Keys.SIGN_LINES, signLines);
+            //noinspection ConstantConditions
+            player.closeInventory(Cause.source(Sponge.getPluginManager().getPlugin("containershop").get()).build());
 
-            shopSign.setPosition(bs.getPosition());
+            shopSign.setLocation(location);
 
-            ContainerShop.getSignCollection().put(bs.getPosition(), shopSign);
+            ContainerShop.getSignCollection().put(location, shopSign);
 
-            ContainerShop.getStorage().createSign(bs.getPosition(), shopSign);
+            ContainerShop.getStorage().createSign(shopSign);
 
             ContainerShop.getPlacing().remove(player.getUniqueId());
+
+            player.sendMessage(Text.of(TextColors.DARK_GREEN, "You have successfully created your shop."));
+
+            sign.offer(Keys.SIGN_LINES, signLines);
 
         }
 

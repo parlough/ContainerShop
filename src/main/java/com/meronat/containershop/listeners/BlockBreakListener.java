@@ -27,6 +27,7 @@ package com.meronat.containershop.listeners;
 
 import com.meronat.containershop.ContainerShop;
 import com.meronat.containershop.Util;
+import com.meronat.containershop.database.Storage;
 import com.meronat.containershop.entities.ShopSign;
 import com.meronat.containershop.entities.ShopSignCollection;
 import org.spongepowered.api.block.BlockSnapshot;
@@ -42,7 +43,9 @@ import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
+import java.awt.Container;
 import java.util.Optional;
+import java.util.UUID;
 
 public class BlockBreakListener {
 
@@ -53,13 +56,23 @@ public class BlockBreakListener {
 
             BlockSnapshot block = t.getOriginal();
 
+            Optional<Location<World>> optionalLocation = block.getLocation();
+
+            if (!optionalLocation.isPresent()) {
+
+                return;
+
+            }
+
+            Location<World> location = optionalLocation.get();
+
             Optional<ShopSign> optionalSign = Optional.empty();
 
             ShopSign sign;
 
             if (block.getExtendedState().getType().equals(BlockTypes.WALL_SIGN)) {
 
-                optionalSign = ContainerShop.getSignCollection().getSign(block.getPosition());
+                optionalSign = ContainerShop.getSignCollection().getSign(location);
 
 
             } else if (ContainerShop.getConfig().getContainers().contains(block.getExtendedState().getId())) {
@@ -84,7 +97,19 @@ public class BlockBreakListener {
 
                 if (player.getUniqueId().equals(sign.getOwner()) || ContainerShop.isBypassing(player.getUniqueId())) {
 
-                    ContainerShop.getSignCollection().remove(sign.getPosition());
+                    player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You have destroyed your shop."));
+
+                    ContainerShop.getSignCollection().remove(sign.getLocation());
+
+                    Storage storage = ContainerShop.getStorage();
+
+                    for (UUID uuid : sign.getAccessors()) {
+
+                        storage.removeAccessor(sign.getLocation(), uuid);
+
+                    }
+
+                    ContainerShop.getStorage().deleteSign(sign.getLocation());
 
                     return;
 
@@ -113,7 +138,7 @@ public class BlockBreakListener {
 
                 Location<World> location = t.getOriginal().getLocation().get();
 
-                if (signCollection.getSign(location.getBlockPosition()).isPresent()) {
+                if (signCollection.getSign(location).isPresent()) {
 
                     t.setValid(false);
 

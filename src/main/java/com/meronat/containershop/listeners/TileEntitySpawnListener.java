@@ -54,7 +54,7 @@ public class TileEntitySpawnListener {
             }
 
             // Attempts to get the shop. If it is present it will be loaded.
-            ContainerShop.getSignCollection().getSign(sign.getLocation().getBlockPosition());
+            ContainerShop.getSignCollection().getSign(sign.getLocation());
 
         }
 

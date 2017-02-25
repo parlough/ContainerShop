@@ -44,6 +44,7 @@ import org.spongepowered.api.event.cause.entity.spawn.SpawnTypes;
 import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.Container;
+import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.item.inventory.transaction.InventoryTransactionResult;
@@ -85,7 +86,7 @@ public class InteractListener {
 
         Location<World> location = optionalLocation.get();
 
-        Optional<ShopSign> optionalShop = ContainerShop.getSignCollection().getSign(location.getBlockPosition());
+        Optional<ShopSign> optionalShop = ContainerShop.getSignCollection().getSign(location);
 
         if (!optionalShop.isPresent()) {
 
@@ -124,16 +125,16 @@ public class InteractListener {
             }
 
             Text info = Text.builder()
-                .append(Text.of(TextColors.DARK_GREEN, "Id:", TextColors.GRAY, itemStack.getItem().getId()), Text.NEW_LINE)
-                .append(Text.of(TextColors.DARK_GREEN, "Name: ", TextColors.GRAY,  itemStack.getItem().getName()), Text.NEW_LINE)
+                .append(Text.of(TextColors.DARK_GREEN, "Id: ", TextColors.GRAY, itemStack.getItem().getId()), Text.NEW_LINE)
+                .append(Text.of(TextColors.DARK_GREEN, "Name: ", TextColors.GRAY,  itemStack.getItem().getTranslation().get(player.getLocale())), Text.NEW_LINE)
                 .append(Text.of(TextColors.DARK_GREEN, "Amount: ", TextColors.GRAY, itemStack.getQuantity(), Text.NEW_LINE))
                 .append(Text.of(TextColors.DARK_GREEN, "Buy price: ", TextColors.GRAY, buy, Text.NEW_LINE))
                 .append(Text.of(TextColors.DARK_GREEN, "Sell price: ", TextColors.GRAY, sell, Text.NEW_LINE))
-                .append(Text.of(TextColors.DARK_GREEN, "Enchantments: ", TextColors.GRAY, Util.getEnchantments(itemStack), Text.NEW_LINE))
+                .append(Text.of(TextColors.DARK_GREEN, "Enchantments: ", TextColors.GRAY, Util.getEnchantments(itemStack)))
                 .build();
 
             player.sendMessage(Text.of(TextColors.DARK_GREEN, "You are buying ", TextColors.LIGHT_PURPLE, itemStack.getQuantity() + " " +
-                    itemStack.getItem().getName(), TextColors.GRAY, " - Hover for more information.").toBuilder()
+                itemStack.getItem().getTranslation().get(player.getLocale()), TextColors.GRAY, " - Hover for more information.").toBuilder()
                 .onHover(TextActions.showText(info))
                 .onClick(TextActions.suggestCommand("/cs help"))
                 .build());
@@ -142,7 +143,7 @@ public class InteractListener {
 
             if (player.get(Keys.GAME_MODE).isPresent() && player.get(Keys.GAME_MODE).get().equals(GameModes.CREATIVE)) {
 
-                player.sendMessage(Text.of(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You cannot be in creative mode and use shops.")));
+                player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You cannot be in creative mode and use shops."));
 
                 return;
 
@@ -207,7 +208,7 @@ public class InteractListener {
 
             }
 
-            ItemStack stack = ItemStack.of(ItemTypes.NONE, 0);
+            ItemStack stack = null;
 
             if (shopSign.isAdminShop()) {
 
@@ -215,15 +216,15 @@ public class InteractListener {
 
             } else {
 
-                for (Container c : Util.getConnectedContainers(location, shopSign)) {
+                for (Inventory i : Util.getConnectedContainers(location, shopSign)) {
 
-                    if (!c.contains(itemStack)) {
+                    if (!i.contains(itemStack)) {
 
                         continue;
 
                     }
 
-                    Optional<ItemStack> optionalStack = c.query(itemStack).poll(itemStack.getQuantity());
+                    Optional<ItemStack> optionalStack = i.query(itemStack).poll(itemStack.getQuantity());
 
                     if (!optionalStack.isPresent()) {
 
@@ -245,7 +246,7 @@ public class InteractListener {
 
             }
 
-            if (stack.getItem().equals(ItemTypes.NONE)) {
+            if (stack == null) {
 
                 player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "This shop does not have enough stock."));
 
@@ -310,7 +311,7 @@ public class InteractListener {
 
         Location<World> location = optionalLocation.get();
 
-        Optional<ShopSign> optionalShop = ContainerShop.getSignCollection().getSign(location.getBlockPosition());
+        Optional<ShopSign> optionalShop = ContainerShop.getSignCollection().getSign(location);
 
         if (!optionalShop.isPresent()) {
 
@@ -322,7 +323,7 @@ public class InteractListener {
 
         if (player.get(Keys.GAME_MODE).isPresent() && player.get(Keys.GAME_MODE).get().equals(GameModes.CREATIVE)) {
 
-            player.sendMessage(Text.of(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You cannot be in creative mode and use shops.")));
+            player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You cannot be in creative mode and use shops."));
 
             return;
 
@@ -358,24 +359,26 @@ public class InteractListener {
 
         }
 
-        Container containerToOffer = null;
+        Inventory inventoryToOffer = null;
 
         if (!shopSign.isAdminShop()) {
 
-            for (Container c : Util.getConnectedContainers(location, shopSign)) {
+            for (Inventory i : Util.getConnectedContainers(location, shopSign)) {
 
                 ItemStack clone = itemStack.copy();
 
-                if (c.offer(clone).getRejectedItems().size() != 0) {
+                int rejected = i.offer(clone).getRejectedItems().size();
 
-                    c.queryAny(clone).poll(itemStack.getQuantity() - clone.getQuantity());
+                if (rejected != 0) {
+
+                    i.queryAny(clone).poll(itemStack.getQuantity() - rejected);
                     continue;
 
                 }
 
-                c.queryAny(clone).poll(itemStack.getQuantity());
+                i.queryAny(clone).poll(itemStack.getQuantity());
 
-                containerToOffer = c;
+                inventoryToOffer = i;
 
                 break;
 
@@ -383,7 +386,7 @@ public class InteractListener {
 
         }
 
-        if (containerToOffer == null) {
+        if (inventoryToOffer == null) {
 
             player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "This shop is out of stock."));
 
@@ -436,7 +439,7 @@ public class InteractListener {
 
         if (!shopSign.isAdminShop()) {
 
-            containerToOffer.offer(optionalTempStack.get());
+            inventoryToOffer.offer(optionalTempStack.get());
 
         }
 

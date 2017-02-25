@@ -58,6 +58,8 @@ import org.spongepowered.api.service.economy.EconomyService;
 import org.spongepowered.api.service.permission.PermissionService;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Tristate;
+import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -207,11 +209,11 @@ public class ContainerShop {
 
                     ShopSignCollection shopSignCollection = ContainerShop.getSignCollection();
 
-                    for (Map.Entry<Vector3i, ShopSign> entry : shopSignCollection.entrySet()) {
+                    for (Map.Entry<Location<World>, ShopSign> entry : shopSignCollection.entrySet()) {
 
                         if (System.currentTimeMillis() - entry.getValue().getLastAccessed() >= 45000) {
 
-                            ContainerShop.getStorage().updateSign(entry.getKey(), entry.getValue());
+                            ContainerShop.getStorage().updateSign(entry.getValue());
 
                             shopSignCollection.remove(entry.getKey());
 

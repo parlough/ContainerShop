@@ -26,18 +26,32 @@
 package com.meronat.containershop;
 
 import com.flowpowered.math.vector.Vector3i;
+import com.google.common.reflect.TypeToken;
 import com.meronat.containershop.entities.ShopSign;
+import ninja.leaping.configurate.ConfigurationNode;
+import ninja.leaping.configurate.gson.GsonConfigurationLoader;
+import ninja.leaping.configurate.objectmapping.ObjectMappingException;
 import org.spongepowered.api.block.BlockSnapshot;
+import org.spongepowered.api.block.BlockState;
+import org.spongepowered.api.block.tileentity.TileEntity;
+import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.manipulator.mutable.item.EnchantmentData;
 import org.spongepowered.api.data.meta.ItemEnchantment;
+import org.spongepowered.api.item.inventory.Carrier;
 import org.spongepowered.api.item.inventory.Container;
+import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.service.permission.Subject;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -47,6 +61,16 @@ import java.util.Set;
 public final class Util {
 
     public static Optional<ShopSign> getAttachedSign(BlockSnapshot block) {
+
+        Optional<Location<World>> optionalLocation = block.getLocation();
+
+        if (!optionalLocation.isPresent()) {
+
+            return Optional.empty();
+
+        }
+
+        Location<World> location = optionalLocation.get();
 
         Optional<Set<Direction>> optionalDirections = block.get(Keys.CONNECTED_DIRECTIONS);
 
@@ -60,7 +84,7 @@ public final class Util {
 
                 Vector3i possible = block.getPosition().add(d.asBlockOffset());
 
-                Optional<ShopSign> optionalSign = ContainerShop.getSignCollection().getSign(possible);
+                Optional<ShopSign> optionalSign = ContainerShop.getSignCollection().getSign(location.getBlockRelative(d));
 
                 if (optionalSign.isPresent()) {
 
@@ -84,10 +108,41 @@ public final class Util {
 
     }
 
-    public static Set<Container> getConnectedContainers(Location<World> location, ShopSign sign) {
+    public static List<Inventory> getConnectedContainers(Location<World> location, ShopSign sign) {
 
-        // TODO Actually do this
-        return new HashSet<>();
+        List<Inventory> inventories = new ArrayList<>();
+
+        BlockState state = location.getBlock();
+
+        if (state.supports(Keys.DIRECTION)) {
+
+            Optional<Direction> optionalDirection = state.get(Keys.DIRECTION);
+
+            if (optionalDirection.isPresent()) {
+
+                Location<World> conLocation = location.getRelative(optionalDirection.get().getOpposite());
+
+                if (ContainerShop.getConfig().getContainers().contains(conLocation.getBlockType().getId())) {
+
+                    Optional<TileEntity> optionalTileEntity = conLocation.getTileEntity();
+
+                    if (optionalTileEntity.isPresent()) {
+
+                        if (optionalTileEntity.get() instanceof TileEntityCarrier) {
+
+                            inventories.add(((TileEntityCarrier) optionalTileEntity.get()).getInventory());
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+        return inventories;
 
     }
 
@@ -112,6 +167,28 @@ public final class Util {
         }
 
         return "";
+
+    }
+
+    public static String serializeItemStack(ItemStack item) throws ObjectMappingException, IOException {
+
+        StringWriter sink = new StringWriter();
+        GsonConfigurationLoader loader = GsonConfigurationLoader.builder().setSink(() -> new BufferedWriter(sink)).build();
+        ConfigurationNode node = loader.createEmptyNode();
+        node.setValue(TypeToken.of(ItemStack.class), item);
+        loader.save(node);
+
+        return sink.toString();
+
+    }
+
+    public static ItemStack deserializeItemStack(String item) throws IOException, ObjectMappingException {
+
+        StringReader source = new StringReader(item);
+        GsonConfigurationLoader loader = GsonConfigurationLoader.builder().setSource(() -> new BufferedReader(source)).build();
+        ConfigurationNode node = loader.load();
+
+        return node.getValue(TypeToken.of(ItemStack.class));
 
     }
 

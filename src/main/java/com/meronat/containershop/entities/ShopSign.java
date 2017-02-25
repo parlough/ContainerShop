@@ -26,7 +26,10 @@
 package com.meronat.containershop.entities;
 
 import com.flowpowered.math.vector.Vector3i;
+import com.google.common.collect.ImmutableSet;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
 
 import java.math.BigDecimal;
 import java.util.HashSet;
@@ -46,7 +49,7 @@ public class ShopSign {
 
     private BigDecimal buyPrice;
     private BigDecimal sellPrice;
-    private Vector3i position;
+    private Location<World> location;
 
     private long lastAccessed;
 
@@ -110,6 +113,12 @@ public class ShopSign {
 
     }
 
+    public ImmutableSet<UUID> getAccessors() {
+
+        return ImmutableSet.copyOf(this.accessors);
+
+    }
+
     public ItemStack getItem() {
 
         this.renewTime();
@@ -117,17 +126,17 @@ public class ShopSign {
 
     }
 
-    public void setPosition(Vector3i position) {
+    public void setLocation(Location<World> location) {
 
         this.renewTime();
-        this.position = position;
+        this.location = location;
 
     }
 
-    public Vector3i getPosition() {
+    public Location<World> getLocation() {
 
         this.renewTime();
-        return this.position;
+        return this.location;
 
     }
 
