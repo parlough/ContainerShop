@@ -23,28 +23,8 @@
  * THE SOFTWARE.
  */
 
-package com.meronat.containershop.entities;
+package com.meronat.containershop.commands;
 
-import com.meronat.containershop.ContainerShop;
-import org.spongepowered.api.world.Location;
-import org.spongepowered.api.world.World;
-
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-
-public final class ShopSignCollection extends ConcurrentHashMap<Location<World>, ShopSign> {
-
-    public Optional<ShopSign> getSign(Location<World> location) {
-        if (!this.containsKey(location)) {
-            ContainerShop.getStorage().getSign(location).ifPresent(s -> {
-
-                s.setLocation(location);
-                super.put(location, s);
-
-            });
-        }
-
-        return Optional.ofNullable(super.get(location));
-    }
+public class StopCommand {
 
 }

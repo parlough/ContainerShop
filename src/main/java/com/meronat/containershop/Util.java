@@ -38,8 +38,6 @@ import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.manipulator.mutable.item.EnchantmentData;
 import org.spongepowered.api.data.meta.ItemEnchantment;
-import org.spongepowered.api.item.inventory.Carrier;
-import org.spongepowered.api.item.inventory.Container;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.service.permission.Subject;
@@ -53,7 +51,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -65,9 +62,7 @@ public final class Util {
         Optional<Location<World>> optionalLocation = block.getLocation();
 
         if (!optionalLocation.isPresent()) {
-
             return Optional.empty();
-
         }
 
         Location<World> location = optionalLocation.get();
@@ -77,101 +72,71 @@ public final class Util {
         ShopSign sign = null;
 
         if (optionalDirections.isPresent()) {
-
             Set<Direction> directions = optionalDirections.get();
 
             for (Direction d : directions) {
-
                 Vector3i possible = block.getPosition().add(d.asBlockOffset());
 
                 Optional<ShopSign> optionalSign = ContainerShop.getSignCollection().getSign(location.getBlockRelative(d));
-
                 if (optionalSign.isPresent()) {
 
                     sign = optionalSign.get();
-
                 }
-
             }
-
         }
 
         return Optional.ofNullable(sign);
-
     }
 
     public static int getLimit(Subject subject, String key) {
-
-        Optional<String> optionalLimit = subject.getOption(key);
-
-        return optionalLimit.map(Integer::parseInt).orElse(0);
-
+        return subject.getOption(key).map(Integer::parseInt).orElse(0);
     }
 
     public static List<Inventory> getConnectedContainers(Location<World> location, ShopSign sign) {
-
         List<Inventory> inventories = new ArrayList<>();
 
         BlockState state = location.getBlock();
 
         if (state.supports(Keys.DIRECTION)) {
-
             Optional<Direction> optionalDirection = state.get(Keys.DIRECTION);
 
             if (optionalDirection.isPresent()) {
-
                 Location<World> conLocation = location.getRelative(optionalDirection.get().getOpposite());
 
                 if (ContainerShop.getConfig().getContainers().contains(conLocation.getBlockType().getId())) {
-
                     Optional<TileEntity> optionalTileEntity = conLocation.getTileEntity();
 
                     if (optionalTileEntity.isPresent()) {
-
                         if (optionalTileEntity.get() instanceof TileEntityCarrier) {
-
                             inventories.add(((TileEntityCarrier) optionalTileEntity.get()).getInventory());
-
                         }
-
                     }
-
                 }
-
             }
-
         }
 
         return inventories;
-
     }
 
     public static String getEnchantments(ItemStack stack) {
-
         Optional<EnchantmentData> optionalEnchantmentData = stack.get(EnchantmentData.class);
 
         if (optionalEnchantmentData.isPresent()) {
-
             List<ItemEnchantment> enchantments = optionalEnchantmentData.get().enchantments().get();
 
             List<String> names = new ArrayList<>();
 
             for (ItemEnchantment e : enchantments) {
-
                 names.add(e.getEnchantment().getName() + " " + e.getLevel());
-
             }
 
             return String.join(", ", names);
-
         }
 
         return "";
-
     }
 
     public static String serializeItemStack(ItemStack item) throws ObjectMappingException, IOException {
-
         StringWriter sink = new StringWriter();
         GsonConfigurationLoader loader = GsonConfigurationLoader.builder().setSink(() -> new BufferedWriter(sink)).build();
         ConfigurationNode node = loader.createEmptyNode();
@@ -179,17 +144,14 @@ public final class Util {
         loader.save(node);
 
         return sink.toString();
-
     }
 
     public static ItemStack deserializeItemStack(String item) throws IOException, ObjectMappingException {
-
         StringReader source = new StringReader(item);
         GsonConfigurationLoader loader = GsonConfigurationLoader.builder().setSource(() -> new BufferedReader(source)).build();
         ConfigurationNode node = loader.load();
 
         return node.getValue(TypeToken.of(ItemStack.class));
-
     }
 
 }

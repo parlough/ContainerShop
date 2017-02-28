@@ -63,57 +63,39 @@ public class Config {
     private List<String> containers = Lists.newArrayList("minecraft:chest", "minecraft:trapped_chest");
 
     public boolean allowCreative() {
-
         return this.creative;
-
     }
 
     public boolean canEdit() {
-
         return this.editing;
-
     }
 
     public boolean messageOutOfStock() {
-
         return this.outOfStock;
-
     }
 
     public boolean notifyTransactions() {
-
         return this.transactionNotify;
-
     }
 
     public boolean protect() {
-
         return this.protect;
-
     }
 
     public boolean limitShops() {
-
         return this.limitShops;
-
     }
 
     public boolean protectExplosions() {
-
         return this.protectExplosions;
-
     }
 
     public boolean protectHoppers() {
-
         return this.protectHoppers;
-
     }
 
     public List<String> getContainers() {
-
         return this.containers;
-
     }
 
 }

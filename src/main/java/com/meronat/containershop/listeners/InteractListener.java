@@ -42,8 +42,6 @@ import org.spongepowered.api.event.cause.Cause;
 import org.spongepowered.api.event.cause.entity.spawn.EntitySpawnCause;
 import org.spongepowered.api.event.cause.entity.spawn.SpawnTypes;
 import org.spongepowered.api.event.filter.cause.Root;
-import org.spongepowered.api.item.ItemTypes;
-import org.spongepowered.api.item.inventory.Container;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
@@ -67,21 +65,16 @@ public class InteractListener {
 
     @Listener
     public void onRightClick(InteractBlockEvent.Secondary event, @Root Player player) {
-
         BlockSnapshot bs = event.getTargetBlock();
 
         if (!bs.getState().getType().equals(BlockTypes.WALL_SIGN)) {
-
             return;
-
         }
 
         Optional<Location<World>> optionalLocation = bs.getLocation();
 
         if (!optionalLocation.isPresent()) {
-
             return;
-
         }
 
         Location<World> location = optionalLocation.get();
@@ -89,9 +82,7 @@ public class InteractListener {
         Optional<ShopSign> optionalShop = ContainerShop.getSignCollection().getSign(location);
 
         if (!optionalShop.isPresent()) {
-
             return;
-
         }
 
         ShopSign shopSign = optionalShop.get();
@@ -99,29 +90,20 @@ public class InteractListener {
         ItemStack itemStack = shopSign.getItem();
 
         if (player.get(Keys.IS_SNEAKING).isPresent() && player.get(Keys.IS_SNEAKING).get()) {
-
             final String buy;
 
             if (shopSign.getBuyPrice().isPresent()) {
-
                 buy = shopSign.getBuyPrice().get().toPlainString();
-
             } else {
-
                 buy = "not available";
-
             }
 
             final String sell;
 
             if (shopSign.getSellPrice().isPresent()) {
-
                 sell = shopSign.getSellPrice().get().toPlainString();
-
             } else {
-
                 sell = "not available";
-
             }
 
             Text info = Text.builder()
@@ -138,33 +120,25 @@ public class InteractListener {
                 .onHover(TextActions.showText(info))
                 .onClick(TextActions.suggestCommand("/cs help"))
                 .build());
-
         } else {
-
             if (player.get(Keys.GAME_MODE).isPresent() && player.get(Keys.GAME_MODE).get().equals(GameModes.CREATIVE)) {
-
                 player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You cannot be in creative mode and use shops."));
 
                 return;
-
             }
 
             if (player.getUniqueId().equals(shopSign.getOwner())) {
-
                 player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You cannot buy from your own shop."));
 
                 return;
-
             }
 
             Optional<BigDecimal> optionalBuyPrice = shopSign.getBuyPrice();
 
             if (!optionalBuyPrice.isPresent()) {
-
                 player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You cannot buy from this shop."));
 
                 return;
-
             }
 
             //noinspection ConstantConditions
@@ -178,80 +152,57 @@ public class InteractListener {
             final ResultType econResult;
 
             if (shopSign.isAdminShop()) {
-
                 econResult = account.withdraw(economyService.getDefaultCurrency(), optionalBuyPrice.get(), Cause.source(pluginContainer).build()).getResult();
-
             } else {
-
                 //noinspection ConstantConditions
                 econResult = account.transfer(
                     economyService.getOrCreateAccount(shopSign.getOwner()).get(),
                     economyService.getDefaultCurrency(),
                     optionalBuyPrice.get(),
                     Cause.source(pluginContainer).build()).getResult();
-
             }
 
             if (!econResult.equals(ResultType.SUCCESS)) {
-
                 if (econResult.equals(ResultType.ACCOUNT_NO_FUNDS)) {
-
                     player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You do not have enough available funds."));
-
                 } else {
-
                     player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "There was a problem transferring funds."));
-
                 }
 
                 return;
-
             }
 
             ItemStack stack = null;
 
             if (shopSign.isAdminShop()) {
-
                 stack = shopSign.getItem().copy();
-
             } else {
-
                 for (Inventory i : Util.getConnectedContainers(location, shopSign)) {
-
                     if (!i.contains(itemStack)) {
-
                         continue;
-
                     }
 
                     Optional<ItemStack> optionalStack = i.query(itemStack).poll(itemStack.getQuantity());
 
                     if (!optionalStack.isPresent()) {
-
                         continue;
-
                     }
 
                     if (!(optionalStack.get().getQuantity() == itemStack.getQuantity())) {
-
                         continue;
-
                     }
 
                     stack = optionalStack.get();
 
                     break;
-
                 }
 
             }
 
             if (stack == null) {
-
                 player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "This shop does not have enough stock."));
 
                 return;
-
             }
 
             InventoryTransactionResult result = player.getInventory().offer(stack);
@@ -261,9 +212,7 @@ public class InteractListener {
             Collection<ItemStackSnapshot> rejectedItems = result.getRejectedItems();
 
             if (rejectedItems.isEmpty()) {
-
                 return;
-
             }
 
             Location<World> playerLocation = player.getLocation();
@@ -271,7 +220,6 @@ public class InteractListener {
             World world = playerLocation.getExtent();
 
             for (ItemStackSnapshot i : rejectedItems) {
-
                 Item rejected = (Item) world.createEntity(EntityTypes.ITEM, playerLocation.getPosition());
 
                 rejected.offer(Keys.REPRESENTED_ITEM, i);
@@ -281,32 +229,25 @@ public class InteractListener {
                         .entity(rejected)
                         .type(SpawnTypes.PLUGIN)
                         .build()).owner(pluginContainer).build());
-
             }
 
             player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "Some items you bought were placed on the ground."));
-
         }
 
     }
 
     @Listener
     public void onLeftClick(InteractBlockEvent.Primary event, @Root Player player) {
-
         BlockSnapshot bs = event.getTargetBlock();
 
         if (!bs.getState().getType().equals(BlockTypes.WALL_SIGN)) {
-
             return;
-
         }
 
         Optional<Location<World>> optionalLocation = bs.getLocation();
 
         if (!optionalLocation.isPresent()) {
-
             return;
-
         }
 
         Location<World> location = optionalLocation.get();
@@ -314,86 +255,68 @@ public class InteractListener {
         Optional<ShopSign> optionalShop = ContainerShop.getSignCollection().getSign(location);
 
         if (!optionalShop.isPresent()) {
-
             return;
-
         }
 
         ShopSign shopSign = optionalShop.get();
 
         if (player.get(Keys.GAME_MODE).isPresent() && player.get(Keys.GAME_MODE).get().equals(GameModes.CREATIVE)) {
-
             player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You cannot be in creative mode and use shops."));
 
             return;
-
         }
 
         if (player.getUniqueId().equals(shopSign.getOwner())) {
-
             player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You cannot sell to your own shop."));
 
             return;
-
         }
 
         ItemStack itemStack = shopSign.getItem();
 
-        Optional<ItemStack> optionalTempStack = player.getInventory().query(itemStack).poll();
-
-        if (!optionalTempStack.isPresent() || optionalTempStack.get().getQuantity() != itemStack.getQuantity()) {
-
-            player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You do not have enough of this item to sell."));
-
-            return;
-
-        }
-
         Optional<BigDecimal> optionalSellPrice = shopSign.getSellPrice();
 
         if (!optionalSellPrice.isPresent()) {
-
             player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You cannot sell to this shop."));
 
             return;
+        }
 
+        Optional<ItemStack> optionalTempStack = player.getInventory().query(itemStack).poll();
+
+        if (!optionalTempStack.isPresent() || optionalTempStack.get().getQuantity() != itemStack.getQuantity()) {
+            player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You do not have enough of this item to sell."));
+
+            return;
         }
 
         Inventory inventoryToOffer = null;
 
         if (!shopSign.isAdminShop()) {
-
             for (Inventory i : Util.getConnectedContainers(location, shopSign)) {
-
                 ItemStack clone = itemStack.copy();
 
-                int rejected = i.offer(clone).getRejectedItems().size();
+                i.offer(clone);
 
-                if (rejected != 0) {
-
-                    i.queryAny(clone).poll(itemStack.getQuantity() - rejected);
+                if (clone.getQuantity() > 0) {
+                    i.query(itemStack).poll(itemStack.getQuantity() - clone.getQuantity());
                     continue;
-
                 }
 
-                i.queryAny(clone).poll(itemStack.getQuantity());
+                i.query(itemStack).poll(itemStack.getQuantity());
 
                 inventoryToOffer = i;
 
                 break;
-
             }
 
-        }
+            if (inventoryToOffer == null) {
+                player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "This shop does not have space for your sale."));
 
-        if (inventoryToOffer == null) {
+                // TODO Send message to owner of shop
 
-            player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "This shop is out of stock."));
-
-            // TODO Send message to owner of shop
-
-            return;
-
+                return;
+            }
         }
 
         //noinspection ConstantConditions
@@ -407,44 +330,39 @@ public class InteractListener {
         final ResultType econResult;
 
         if (shopSign.isAdminShop()) {
-
             econResult = account.deposit(economyService.getDefaultCurrency(), optionalSellPrice.get(), Cause.source(pluginContainer).build()).getResult();
-
         } else {
-
             //noinspection ConstantConditions
             econResult = economyService.getOrCreateAccount(shopSign.getOwner()).get().transfer(
                 account,
                 economyService.getDefaultCurrency(),
                 optionalSellPrice.get(),
                 Cause.source(pluginContainer).build()).getResult();
-
         }
 
         if (!econResult.equals(ResultType.SUCCESS)) {
-
             if (econResult.equals(ResultType.ACCOUNT_NO_FUNDS)) {
-
                 player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "The shop owner does not have enough money."));
-
             } else {
-
                 player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "There was a problem transferring funds."));
-
             }
 
             return;
+        }
 
+        if (inventoryToOffer == null) {
+            player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "There was some extraneous issue. Try again."));
+
+            player.getInventory().offer(optionalTempStack.get());
+
+            return;
         }
 
         if (!shopSign.isAdminShop()) {
-
             inventoryToOffer.offer(optionalTempStack.get());
-
         }
 
         player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.DARK_GREEN, "Successfully sold items!"));
-
     }
 
 }

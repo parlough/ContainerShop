@@ -38,7 +38,6 @@ public class BaseCommand implements CommandExecutor {
 
     @Override
     public CommandResult execute(CommandSource source, CommandContext args) throws CommandException {
-
         source.sendMessage(Text.of(TextColors.DARK_GREEN, "ContainerShop v0.0.1"));
         source.sendMessage(Text.of(TextColors.DARK_GREEN, "Created by ", TextColors.GOLD, "IchorPowered: ", TextColors.BLUE, "Meronat, Nighteyes604"));
         source.sendMessage(Text.builder("Click here for help")
@@ -48,7 +47,6 @@ public class BaseCommand implements CommandExecutor {
                 .build());
 
         return CommandResult.success();
-
     }
 
 }

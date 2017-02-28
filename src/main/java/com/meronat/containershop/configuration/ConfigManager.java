@@ -42,37 +42,27 @@ public class ConfigManager<T> {
 
     public ConfigManager(TypeToken<T> configTypeToken, ConfigurationLoader<?> configurationLoader, Supplier<T> newObjectProvider)
             throws IOException, ObjectMappingException {
-
         this.configTypeToken = configTypeToken;
         this.configurationLoader = configurationLoader;
         this.newObjectProvider = newObjectProvider;
 
         save();
-
     }
 
     public void load() throws IOException, ObjectMappingException {
-
         config = this.configurationLoader.load().getValue(this.configTypeToken, newObjectProvider);
-
     }
 
     public void save() throws IOException, ObjectMappingException {
-
         if (config == null) {
-
             load();
-
         }
 
         this.configurationLoader.save(this.configurationLoader.createEmptyNode().setValue(this.configTypeToken, this.config));
-
     }
 
     public T getConfig() {
-
         return this.config;
-
     }
 
 }

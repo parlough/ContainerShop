@@ -30,20 +30,23 @@ import com.meronat.containershop.Util;
 import com.meronat.containershop.database.Storage;
 import com.meronat.containershop.entities.ShopSign;
 import com.meronat.containershop.entities.ShopSignCollection;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.data.Transaction;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
 import org.spongepowered.api.event.world.ExplosionEvent;
+import org.spongepowered.api.service.user.UserStorageService;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.chat.ChatTypes;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import java.awt.Container;
+import java.sql.Connection;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -53,15 +56,12 @@ public class BlockBreakListener {
     public void onBlockBreak(ChangeBlockEvent.Break event) {
 
         for (Transaction<BlockSnapshot> t: event.getTransactions()) {
-
             BlockSnapshot block = t.getOriginal();
 
             Optional<Location<World>> optionalLocation = block.getLocation();
 
             if (!optionalLocation.isPresent()) {
-
                 return;
-
             }
 
             Location<World> location = optionalLocation.get();
@@ -71,87 +71,68 @@ public class BlockBreakListener {
             ShopSign sign;
 
             if (block.getExtendedState().getType().equals(BlockTypes.WALL_SIGN)) {
-
                 optionalSign = ContainerShop.getSignCollection().getSign(location);
-
-
             } else if (ContainerShop.getConfig().getContainers().contains(block.getExtendedState().getId())) {
-
                 optionalSign = Util.getAttachedSign(block);
-
             }
 
             if (optionalSign.isPresent()) {
-
                 sign = optionalSign.get();
-
             } else {
-
                 return;
-
             }
 
             if (event.getCause().root() instanceof Player) {
-
                 Player player = (Player) event.getCause().root();
 
                 if (player.getUniqueId().equals(sign.getOwner()) || ContainerShop.isBypassing(player.getUniqueId())) {
+                    final String[] name = {"N/A"};
 
-                    player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You have destroyed your shop."));
+                    if (player.getUniqueId().equals(sign.getOwner())) {
+                        name[0] = "your";
+                    } else {
+                        Sponge.getServiceManager().provide(UserStorageService.class)
+                            .ifPresent(s -> s.get(sign.getOwner()).ifPresent(u -> name[0] = u.getName() + "'s"));
+                    }
+
+                    player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You have destroyed " + name[0] + " shop."));
 
                     ContainerShop.getSignCollection().remove(sign.getLocation());
 
                     Storage storage = ContainerShop.getStorage();
 
                     for (UUID uuid : sign.getAccessors()) {
-
                         storage.removeAccessor(sign.getLocation(), uuid);
-
                     }
 
                     ContainerShop.getStorage().deleteSign(sign.getLocation());
 
                     return;
-
                 } else {
-
                     player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.DARK_RED, "You cannot destroy someone else's shop."));
-
                 }
-
             }
 
             event.setCancelled(true);
-
         }
 
     }
 
     @Listener
     public void onExplosionEvent(ExplosionEvent.Post event) {
-
         ShopSignCollection signCollection = ContainerShop.getSignCollection();
 
         for (Transaction<BlockSnapshot> t : event.getTransactions()) {
-
             if (t.isValid() && t.getOriginal().getLocation().isPresent()) {
-
                 Location<World> location = t.getOriginal().getLocation().get();
 
                 if (signCollection.getSign(location).isPresent()) {
-
                     t.setValid(false);
-
                 } else if (Util.getAttachedSign(t.getOriginal()).isPresent()) {
-
                     t.setValid(false);
-
                 }
-
             }
-
         }
-
     }
 
     // TODO Protect from pistons pushing if containers are ever broken by that

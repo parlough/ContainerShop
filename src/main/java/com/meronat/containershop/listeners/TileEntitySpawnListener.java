@@ -36,28 +36,22 @@ public class TileEntitySpawnListener {
 
     @Listener
     public void onTileEntitySpawn(SpawnEntityEvent event) {
-
         for (Entity e : event.getEntities()) {
 
             if (!(e instanceof Sign)) {
-
                 continue;
-
             }
 
             Sign sign = (Sign) e;
 
             if (!sign.getBlock().getType().equals(BlockTypes.WALL_SIGN)) {
-
                 continue;
-
             }
 
             // Attempts to get the shop. If it is present it will be loaded.
             ContainerShop.getSignCollection().getSign(sign.getLocation());
 
         }
-
     }
 
 }

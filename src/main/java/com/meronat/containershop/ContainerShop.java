@@ -25,9 +25,9 @@
 
 package com.meronat.containershop;
 
-import com.flowpowered.math.vector.Vector3i;
 import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
+import com.meronat.containershop.commands.Commands;
 import com.meronat.containershop.commands.CreateCommand;
 import com.meronat.containershop.configuration.Config;
 import com.meronat.containershop.configuration.ConfigManager;
@@ -109,28 +109,22 @@ public class ContainerShop {
     @Inject
     public ContainerShop(Logger shopLogger, @DefaultConfig(sharedRoot = false) Path path,
                          @DefaultConfig(sharedRoot = false) ConfigurationLoader<CommentedConfigurationNode> loader) {
-
         ContainerShop.logger = shopLogger;
         ContainerShop.folder = path.getParent();
 
         this.loader = loader;
-
     }
 
     @Listener
     public void onPreInitialization(GamePreInitializationEvent event) {
 
         try {
-
             storage = new Storage();
-
         } catch (SQLException e) {
-
             e.printStackTrace();
             logger.error("There was a problem setting up ContainerShop's storage.");
 
             error = true;
-
         }
 
     }
@@ -141,66 +135,44 @@ public class ContainerShop {
         if (error) return;
 
         try {
-
             config = new ConfigManager<>(TypeToken.of(Config.class), loader, Config::new);
-
         } catch (IOException | ObjectMappingException e) {
-
             e.printStackTrace();
             logger.error("Could not create and/or load the config. ContainerShop will not load.");
 
             error = true;
 
             return;
-
         }
 
-        Sponge.getCommandManager().register(this, CommandSpec.builder()
-            .description(Text.of("Chest shop create command"))
-            .permission("containershop.normal.create")
-            .arguments(GenericArguments.optionalWeak(
-                GenericArguments.flags()
-                    .valueFlag(GenericArguments.doubleNum(Text.of("sell")), "s", "-sell")
-                    .valueFlag(GenericArguments.doubleNum(Text.of("buy")),"b", "-buy")
-                    .permissionFlag("containershops.admin.unlimitedshops", "a")
-                    .buildWith(GenericArguments.none())))
-            .executor(new CreateCommand())
-            .build(), "shopcreate");
+        Commands.getCommands().register();
 
         Optional<EconomyService> optionalEconomyService = Sponge.getServiceManager().provide(EconomyService.class);
 
         if (optionalEconomyService.isPresent()) {
-
             economyService = optionalEconomyService.get();
-
         } else {
-
             logger.error("You need an economy plugin for ContainerShop to work!");
 
             error = true;
 
             return;
-
         }
 
         registerListeners();
-
     }
 
     @Listener
     public void onGamePostInitialization(GamePostInitializationEvent event) {
-
         if (error) return;
 
         Sponge.getServiceManager().provide(PermissionService.class).ifPresent(
                 p -> p.getUserSubjects().getDefaults().getSubjectData()
                         .setPermission(p.getDefaults().getActiveContexts(), "guilds.normal", Tristate.TRUE));
-
     }
 
     @Listener
     public void onGameStarted(GameStartedServerEvent event) {
-
         Sponge.getScheduler().createTaskBuilder()
                 .async()
                 .name("signrecycler")
@@ -222,78 +194,55 @@ public class ContainerShop {
                     }
 
                 }).submit(this);
-
     }
 
     private void registerListeners() {
-
         EventManager eventManager = Sponge.getEventManager();
 
         eventManager.registerListeners(this, new BlockBreakListener());
         eventManager.registerListeners(this, new BlockPlaceListener());
         eventManager.registerListeners(this, new InteractListener());
         eventManager.registerListeners(this, new TileEntitySpawnListener());
-
     }
 
     public static EconomyService getEconomyService() {
-
         return economyService;
-
     }
 
     public static Path getFolder() {
-
         return folder;
-
     }
 
     public static Logger getLogger() {
-
         return logger;
-
     }
 
     public static Storage getStorage() {
-
         return storage;
-
     }
 
     public static ShopSignCollection getSignCollection() {
-
         return signCollection;
-
     }
 
     public static Map<UUID, ShopSign> getPlacing() {
-
         return placing;
-
     }
 
     public static void removeBypassing(UUID uuid) {
-
         bypassing.remove(uuid);
-
     }
 
     public static void addBypassing(UUID uuid) {
-
         bypassing.add(uuid);
-
     }
 
     public static boolean isBypassing(UUID uuid) {
-
         return bypassing.contains(uuid);
-
     }
 
     public static Config getConfig() {
-
         return config.getConfig();
-
     }
 
 }

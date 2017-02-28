@@ -25,7 +25,6 @@
 
 package com.meronat.containershop.entities;
 
-import com.flowpowered.math.vector.Vector3i;
 import com.google.common.collect.ImmutableSet;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.world.Location;
@@ -54,96 +53,70 @@ public class ShopSign {
     private long lastAccessed;
 
     public ShopSign(UUID owner, boolean admin, double buy, double sell, ItemStack item) {
-
         this.owner = owner;
         this.adminShop = admin;
         this.buyPrice = BigDecimal.valueOf(buy);
         this.sellPrice = BigDecimal.valueOf(sell);
         this.item = item;
         this.lastAccessed = System.currentTimeMillis();
-
     }
 
     public UUID getOwner() {
-
         this.renewTime();
         return this.owner;
-
     }
 
     public void addAccessor(UUID accessor) {
-
         this.renewTime();
         this.accessors.add(accessor);
-
     }
 
     public long getLastAccessed() {
-
         this.renewTime();
         return this.lastAccessed;
-
     }
 
     public boolean isAdminShop() {
-
         this.renewTime();
         return this.adminShop;
-
     }
 
     public Optional<BigDecimal> getBuyPrice() {
-
         this.renewTime();
         return Optional.ofNullable(this.buyPrice);
-
     }
 
     public Optional<BigDecimal> getSellPrice() {
-
         this.renewTime();
         return Optional.ofNullable(this.sellPrice);
-
     }
 
     public boolean isAccessor(UUID uuid) {
-
         this.renewTime();
         return uuid.equals(this.owner) || this.accessors.contains(uuid);
-
     }
 
     public ImmutableSet<UUID> getAccessors() {
-
         return ImmutableSet.copyOf(this.accessors);
-
     }
 
     public ItemStack getItem() {
-
         this.renewTime();
         return this.item;
-
     }
 
     public void setLocation(Location<World> location) {
-
         this.renewTime();
         this.location = location;
-
     }
 
     public Location<World> getLocation() {
-
         this.renewTime();
         return this.location;
-
     }
 
     public void renewTime() {
-
         this.lastAccessed = System.currentTimeMillis();
-
     }
 
 }

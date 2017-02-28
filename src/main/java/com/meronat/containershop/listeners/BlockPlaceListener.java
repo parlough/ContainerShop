@@ -25,12 +25,12 @@
 
 package com.meronat.containershop.listeners;
 
+import com.google.common.collect.Lists;
 import com.meronat.containershop.ContainerShop;
 import com.meronat.containershop.entities.ShopSign;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
-import org.spongepowered.api.block.tileentity.Sign;
 import org.spongepowered.api.block.tileentity.TileEntity;
 import org.spongepowered.api.data.Transaction;
 import org.spongepowered.api.data.key.Keys;
@@ -50,7 +50,6 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 public class BlockPlaceListener {
 
@@ -60,29 +59,22 @@ public class BlockPlaceListener {
         // TODO Check they aren't placing it on a chest which is already a shop that's not theirs
 
         for (Transaction<BlockSnapshot> t : event.getTransactions()) {
-
             BlockSnapshot bs = t.getFinal();
 
             if (!bs.getState().getType().equals(BlockTypes.WALL_SIGN)) {
-
                 return;
-
             }
 
             ShopSign shopSign = ContainerShop.getPlacing().get(player.getUniqueId());
 
             if (shopSign == null) {
-
                 return;
-
             }
 
             Optional<Location<World>> optionalLocation = bs.getLocation();
 
             if (!optionalLocation.isPresent()) {
-
                 return;
-
             }
 
             Location<World> location = optionalLocation.get();
@@ -90,37 +82,32 @@ public class BlockPlaceListener {
             Optional<Direction> optionalDirection = bs.getExtendedState().get(Keys.DIRECTION);
 
             if (!optionalDirection.isPresent()) {
-
                 return;
-
             }
 
             if (!ContainerShop.getConfig().getContainers().contains(location.getRelative(optionalDirection.get().getOpposite()).getBlockType().getId())) {
+                player.sendMessage(Text.of(TextColors.RED, "This is not a supported block to place your shop on. Try again."));
 
                 return;
-
             }
 
             Optional<TileEntity> optionalTileEntity = location.getTileEntity();
 
             if (!optionalTileEntity.isPresent()) {
-
                 player.sendMessage(Text.of(TextColors.RED, "Failed to create the shop, try again."));
 
                 return;
-
             }
+
+            //noinspection ConstantConditions
+            player.closeInventory(Cause.source(Sponge.getPluginManager().getPlugin("containershop").get()).build());
 
             final String name;
 
             if (shopSign.isAdminShop()) {
-
                 name = "Admin";
-
             } else {
-
                 name = player.getName();
-
             }
 
             final String buySell;
@@ -130,38 +117,20 @@ public class BlockPlaceListener {
             Optional<BigDecimal> optionalSell = shopSign.getSellPrice();
 
             if (optionalBuy.isPresent() && optionalSell.isPresent()) {
-
                 buySell = "S " + optionalSell.get().toPlainString() + ":" + optionalBuy.get().toPlainString() + " B";
-
             } else if (optionalBuy.isPresent()) {
-
                 buySell = "B " + optionalBuy.get().toPlainString();
-
             } else if (optionalSell.isPresent()) {
-
                 buySell = "S " + optionalSell.get().toPlainString();
-
             } else {
-
                 player.sendMessage(Text.of(TextColors.RED, "The shop cannot have neither a buy or sell price. You must recreate your shop."));
 
                 ContainerShop.getPlacing().remove(player.getUniqueId());
 
                 return;
-
             }
 
-            List<Text> signLines = new ArrayList<>();
-
-            signLines.add(Text.of(name));
-            signLines.add(Text.of(shopSign.getItem().getQuantity()));
-            signLines.add(Text.of(buySell));
-            signLines.add(Text.of(shopSign.getItem().getTranslation().get()));
-
             TileEntity sign = optionalTileEntity.get();
-
-            //noinspection ConstantConditions
-            player.closeInventory(Cause.source(Sponge.getPluginManager().getPlugin("containershop").get()).build());
 
             shopSign.setLocation(location);
 
@@ -171,10 +140,19 @@ public class BlockPlaceListener {
 
             ContainerShop.getPlacing().remove(player.getUniqueId());
 
+            Task.builder()
+                .delayTicks(20)
+                .name("spawn-shoplines-" + player.getName())
+                .execute(() ->
+                    sign.offer(Keys.SIGN_LINES, Lists.newArrayList(
+                        Text.of(name),
+                        Text.of(shopSign.getItem().getQuantity()),
+                        Text.of(buySell),
+                        Text.of(shopSign.getItem().getTranslation().get())))
+                )
+                .submit(Sponge.getPluginManager().getPlugin("containershop"));
+
             player.sendMessage(Text.of(TextColors.DARK_GREEN, "You have successfully created your shop."));
-
-            sign.offer(Keys.SIGN_LINES, signLines);
-
         }
 
     }
