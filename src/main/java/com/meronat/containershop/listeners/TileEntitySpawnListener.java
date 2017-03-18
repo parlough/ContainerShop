@@ -37,7 +37,6 @@ public class TileEntitySpawnListener {
     @Listener
     public void onTileEntitySpawn(SpawnEntityEvent event) {
         for (Entity e : event.getEntities()) {
-
             if (!(e instanceof Sign)) {
                 continue;
             }
@@ -50,7 +49,6 @@ public class TileEntitySpawnListener {
 
             // Attempts to get the shop. If it is present it will be loaded.
             ContainerShop.getSignCollection().getSign(sign.getLocation());
-
         }
     }
 

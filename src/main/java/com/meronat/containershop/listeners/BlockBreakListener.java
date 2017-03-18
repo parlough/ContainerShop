@@ -35,7 +35,6 @@ import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.data.Transaction;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
 import org.spongepowered.api.event.world.ExplosionEvent;
@@ -46,7 +45,6 @@ import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import java.sql.Connection;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -54,7 +52,6 @@ public class BlockBreakListener {
 
     @Listener
     public void onBlockBreak(ChangeBlockEvent.Break event) {
-
         for (Transaction<BlockSnapshot> t: event.getTransactions()) {
             BlockSnapshot block = t.getOriginal();
 

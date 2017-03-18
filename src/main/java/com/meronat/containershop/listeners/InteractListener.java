@@ -32,6 +32,7 @@ import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.Item;
 import org.spongepowered.api.entity.living.player.Player;
@@ -42,6 +43,7 @@ import org.spongepowered.api.event.cause.Cause;
 import org.spongepowered.api.event.cause.entity.spawn.EntitySpawnCause;
 import org.spongepowered.api.event.cause.entity.spawn.SpawnTypes;
 import org.spongepowered.api.event.filter.cause.Root;
+import org.spongepowered.api.event.filter.type.Include;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.ItemStackSnapshot;
@@ -130,6 +132,11 @@ public class InteractListener {
             if (player.getUniqueId().equals(shopSign.getOwner())) {
                 player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You cannot buy from your own shop."));
 
+                return;
+            }
+
+            if (shopSign.isAccessor(player.getUniqueId())) {
+                player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You cannot buy from a shop you have access to."));
                 return;
             }
 
@@ -262,13 +269,16 @@ public class InteractListener {
 
         if (player.get(Keys.GAME_MODE).isPresent() && player.get(Keys.GAME_MODE).get().equals(GameModes.CREATIVE)) {
             player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You cannot be in creative mode and use shops."));
-
             return;
         }
 
         if (player.getUniqueId().equals(shopSign.getOwner())) {
             player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You cannot sell to your own shop."));
+            return;
+        }
 
+        if (shopSign.isAccessor(player.getUniqueId())) {
+            player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You cannot sell to a shop you have access to."));
             return;
         }
 
@@ -363,6 +373,39 @@ public class InteractListener {
         }
 
         player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.DARK_GREEN, "Successfully sold items!"));
+    }
+
+    @Listener
+    @Include({InteractBlockEvent.Primary.class, InteractBlockEvent.Secondary.class})
+    public void onPlayerClick(InteractBlockEvent event, @Root Player player) {
+        //Special code to handle shift secondary clicking (placing a block)
+        if(event instanceof InteractBlockEvent.Secondary && player.get(Keys.IS_SNEAKING).orElse(false)) {
+            if(player.getItemInHand(HandTypes.MAIN_HAND).isPresent() && player.getItemInHand(HandTypes.MAIN_HAND).get().getItem().getBlock().isPresent()) {
+                if(event.getTargetBlock().getLocation().isPresent() && event.getTargetBlock().getLocation().get().getBlockRelative(event.getTargetSide()).getBlockType() == BlockTypes.AIR) {
+                    //If they're sneaking and have an item(block) in their hand, and are clicking to replace air... let the block place handle it
+                    return;
+                }
+            }
+        }
+
+        Optional<Location<World>> optionalLocation = event.getTargetBlock().getLocation();
+
+        //Ignore air and invalid locations, and non-lockable blocks
+        if(event.getTargetBlock().equals(BlockSnapshot.NONE) || !optionalLocation.isPresent() || !ContainerShop.getConfig().getContainers().contains(event.getTargetBlock().getState().getType().getId())) {
+            return;
+        }
+
+        Optional<ShopSign> optionalShopSign = Util.getAttachedSign(event.getTargetBlock());
+
+        if (!optionalShopSign.isPresent()) {
+            return;
+        }
+
+        if (!optionalShopSign.get().isAccessor(player.getUniqueId())) {
+            player.sendMessage(ChatTypes.ACTION_BAR, Text.of(TextColors.RED, "You cannot access someone else's shop!"));
+            event.setCancelled(true);
+        }
+
     }
 
 }

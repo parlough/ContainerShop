@@ -47,8 +47,6 @@ import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 public class BlockPlaceListener {
@@ -105,7 +103,7 @@ public class BlockPlaceListener {
             final String name;
 
             if (shopSign.isAdminShop()) {
-                name = "Admin";
+                name = "Admin Shop";
             } else {
                 name = player.getName();
             }
@@ -141,7 +139,7 @@ public class BlockPlaceListener {
             ContainerShop.getPlacing().remove(player.getUniqueId());
 
             Task.builder()
-                .delayTicks(20)
+                .delayTicks(80)
                 .name("spawn-shoplines-" + player.getName())
                 .execute(() ->
                     sign.offer(Keys.SIGN_LINES, Lists.newArrayList(
@@ -150,7 +148,7 @@ public class BlockPlaceListener {
                         Text.of(buySell),
                         Text.of(shopSign.getItem().getTranslation().get())))
                 )
-                .submit(Sponge.getPluginManager().getPlugin("containershop"));
+                .submit(Sponge.getPluginManager().getPlugin("containershop").get());
 
             player.sendMessage(Text.of(TextColors.DARK_GREEN, "You have successfully created your shop."));
         }

@@ -53,7 +53,11 @@ public class ShopSign {
     private long lastAccessed;
 
     public ShopSign(UUID owner, boolean admin, double buy, double sell, ItemStack item) {
-        this.owner = owner;
+        if (admin) {
+            this.owner = ADMIN;
+        } else {
+            this.owner = owner;
+        }
         this.adminShop = admin;
         this.buyPrice = BigDecimal.valueOf(buy);
         this.sellPrice = BigDecimal.valueOf(sell);

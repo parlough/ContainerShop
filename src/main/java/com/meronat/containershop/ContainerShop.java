@@ -28,7 +28,6 @@ package com.meronat.containershop;
 import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
 import com.meronat.containershop.commands.Commands;
-import com.meronat.containershop.commands.CreateCommand;
 import com.meronat.containershop.configuration.Config;
 import com.meronat.containershop.configuration.ConfigManager;
 import com.meronat.containershop.database.Storage;
@@ -41,11 +40,9 @@ import com.meronat.containershop.listeners.TileEntitySpawnListener;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.loader.ConfigurationLoader;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
-import org.bstats.Metrics;
+import org.bstats.MetricsLite;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.command.args.GenericArguments;
-import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.config.DefaultConfig;
 import org.spongepowered.api.event.EventManager;
 import org.spongepowered.api.event.Listener;
@@ -56,7 +53,6 @@ import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.service.economy.EconomyService;
 import org.spongepowered.api.service.permission.PermissionService;
-import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Tristate;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -100,7 +96,7 @@ public class ContainerShop {
     private static Set<UUID> bypassing = new HashSet<>();
 
     @Inject
-    private Metrics metrics;
+    private MetricsLite metrics;
 
     private ConfigurationLoader<CommentedConfigurationNode> loader;
 
@@ -117,7 +113,6 @@ public class ContainerShop {
 
     @Listener
     public void onPreInitialization(GamePreInitializationEvent event) {
-
         try {
             storage = new Storage();
         } catch (SQLException e) {
@@ -126,12 +121,10 @@ public class ContainerShop {
 
             error = true;
         }
-
     }
 
     @Listener
     public void onGameInitialization(GameInitializationEvent event) {
-
         if (error) return;
 
         try {
@@ -168,31 +161,26 @@ public class ContainerShop {
 
         Sponge.getServiceManager().provide(PermissionService.class).ifPresent(
                 p -> p.getUserSubjects().getDefaults().getSubjectData()
-                        .setPermission(p.getDefaults().getActiveContexts(), "guilds.normal", Tristate.TRUE));
+                        .setPermission(p.getDefaults().getActiveContexts(), "containershop.normal", Tristate.TRUE));
     }
 
     @Listener
     public void onGameStarted(GameStartedServerEvent event) {
+        if (error) return;
         Sponge.getScheduler().createTaskBuilder()
                 .async()
-                .name("signrecycler")
+                .name("containershop-recycler")
                 .interval(5, TimeUnit.MINUTES)
                 .execute(() -> {
-
                     ShopSignCollection shopSignCollection = ContainerShop.getSignCollection();
 
                     for (Map.Entry<Location<World>, ShopSign> entry : shopSignCollection.entrySet()) {
-
                         if (System.currentTimeMillis() - entry.getValue().getLastAccessed() >= 45000) {
-
                             ContainerShop.getStorage().updateSign(entry.getValue());
 
                             shopSignCollection.remove(entry.getKey());
-
                         }
-
                     }
-
                 }).submit(this);
     }
 
